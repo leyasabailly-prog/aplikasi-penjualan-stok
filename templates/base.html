@@ -145,7 +145,12 @@
 
         /* ===== Tabel ===== */
         table {
+            .table-scroll {
             width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius);
+            min-width: 560px;
             border-collapse: collapse;
             background: var(--surface);
             border-radius: var(--radius);
