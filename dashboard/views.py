@@ -15,12 +15,10 @@ def dashboard_view(request):
 
     # Akun tanpa profil/role tidak bisa ditentukan aksesnya -> tolak
     if not is_superuser and role is None:
-        messages.error(request, 'Akun kamu belum punya profil/role. Hubungi admin.')
         return redirect('login')
 
     # Kasir tidak punya akses ke Dashboard sama sekali (sesuai matriks akses)
     if not is_superuser and role == 'kasir':
-        messages.error(request, 'Kamu tidak punya akses ke halaman Dashboard.')
         return redirect('buat_transaksi')
 
     is_admin = is_superuser or role == 'admin'
