@@ -1,6 +1,11 @@
 from django.shortcuts import redirect
-from django.contrib import messages
 from functools import wraps
+
+
+def _landing_for(role):
+    if role == 'kasir':
+        return 'buat_transaksi'
+    return 'dashboard'
 
 
 def role_required(*allowed_roles):
@@ -16,12 +21,10 @@ def role_required(*allowed_roles):
             try:
                 role = request.user.profile.role
             except AttributeError:
-                messages.error(request, 'Akun kamu belum punya profil/role. Hubungi admin.')
-                return redirect('dashboard')
+                return redirect('login')
 
             if role not in allowed_roles:
-                messages.error(request, 'Kamu tidak punya akses ke halaman ini.')
-                return redirect('dashboard')
+                return redirect(_landing_for(role))
 
             return view_func(request, *args, **kwargs)
         return wrapper
