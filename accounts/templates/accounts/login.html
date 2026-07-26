@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - Toko Kita</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F7F1E8;
+            font-family: 'IBM Plex Sans', sans-serif;
+        }
+        .login-panel {
+            width: 100%;
+            max-width: 900px;
+            min-height: 480px;
+            background: #FBF7EF;
+            border: 1px solid #EEE5D6;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(58,50,42,.08);
+            margin: 1.5rem;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 340px;
+            background: #fff;
+            border: 1px solid #EEE5D6;
+            border-radius: 16px;
+            padding: 2rem 1.9rem;
+            box-shadow: 0 4px 14px rgba(58,50,42,.06);
+        }
+        .brand {
+            text-align: center;
+            font-family: 'Fraunces', serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #3A322A;
+            margin-bottom: .1rem;
+        }
+        .brand-sub {
+            text-align: center;
+            color: #A69A85;
+            font-size: .68rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 1.8rem;
+        }
+        .field { margin-bottom: 1.1rem; }
+        .field label {
+            display: block;
+            font-size: .78rem;
+            font-weight: 600;
+            color: #3A322A;
+            margin-bottom: .4rem;
+        }
+        .field .input-wrap {
+            position: relative;
+        }
+        .field .input-wrap i {
+            position: absolute;
+            left: .8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #A69A85;
+            font-size: 1rem;
+        }
+        .field input {
+            width: 100%;
+            padding: .65rem .8rem .65rem 2.3rem;
+            border: 1px solid #EEE5D6;
+            border-radius: 9px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: .88rem;
+            background: #FBF7EF;
+            color: #3A322A;
+        }
+        .field input:focus {
+            outline: none;
+            border-color: #B8622F;
+            box-shadow: 0 0 0 3px #F3E4D6;
+            background: #fff;
+        }
+        .btn-login {
+            width: 100%;
+            background: #B8622F;
+            color: #fff;
+            border: none;
+            padding: .75rem;
+            border-radius: 9px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+            margin-top: .3rem;
+        }
+        .btn-login:hover { background: #9A4F24; }
+        .alert-danger {
+            background: #FBEAE7;
+            color: #C24F3E;
+            border: 1px solid #C24F3E;
+            border-radius: 8px;
+            padding: .6rem .8rem;
+            font-size: .82rem;
+            margin-bottom: 1rem;
+        }
+        .footer-note {
+            text-align: center;
+            color: #C4B9A5;
+            font-size: .68rem;
+            margin-top: 1.4rem;
+            letter-spacing: .04em;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-panel">
+        <div class="login-card">
+            <div class="brand">Toko Kita</div>
+            <div class="brand-sub">Masuk ke sistem</div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-danger">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="field">
+                    <label>Username</label>
+                    <div class="input-wrap">
+                        <i class="ti ti-user"></i>
+                        <input type="text" name="username" required autofocus>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="ti ti-key"></i>
+                        <input type="password" name="password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">Masuk</button>
+            </form>
+            <div class="footer-note">Toko Kita &middot; Sistem Penjualan &amp; Stok</div>
+        </div>
+    </div>
+</body>
+</html>

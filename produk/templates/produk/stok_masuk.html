@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Stok Masuk{% endblock %}
+{% block content %}
+<h1>Input Stok Masuk</h1>
+
+{% if messages %}
+<ul>
+    {% for message in messages %}
+    <li>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <select name="produk_id" required>
+        <option value="">-- Pilih Produk --</option>
+        {% for produk in produk_list %}
+        <option value="{{ produk.id }}">{{ produk.nama_produk }} (Stok saat ini: {{ produk.stok }})</option>
+        {% endfor %}
+    </select>
+    <input type="number" name="jumlah" min="1" placeholder="Jumlah masuk" required>
+    <input type="text" name="keterangan" placeholder="Keterangan (misal: dari supplier X)">
+    <button type="submit">Tambah Stok</button>
+</form>
+
+<h3>Riwayat Stok Masuk Terbaru</h3>
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Produk</th>
+            <th>Jumlah</th>
+            <th>Tanggal</th>
+            <th>Input Oleh</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in riwayat %}
+        <tr>
+            <td>{{ r.produk.nama_produk }}</td>
+            <td>+{{ r.jumlah }}</td>
+            <td>{{ r.tanggal }}</td>
+            <td>{{ r.user }}</td>
+            <td>{{ r.keterangan }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">Belum ada riwayat stok masuk.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

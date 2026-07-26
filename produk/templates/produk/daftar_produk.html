@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Daftar Produk{% endblock %}
+{% block content %}
+<style>
+    .btn-primary {
+        background: var(--accent); color: #fff; border: none; padding: .6rem 1.2rem;
+        border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer;
+    }
+    .btn-edit {
+        color: var(--accent); font-size: .8rem; font-weight: 600;
+        text-decoration: none; border: 1px solid var(--accent);
+        padding: .3rem .7rem; border-radius: 6px;
+    }
+    .btn-toggle-off, .btn-toggle-on {
+        font-size: .8rem; font-weight: 600; text-decoration: none;
+        border-width: 1px; border-style: solid; padding: .3rem .7rem; border-radius: 6px;
+        margin-left: .4rem; cursor: pointer; background: #fff;
+    }
+    .btn-toggle-off { color: var(--danger); border-color: var(--danger); }
+    .btn-toggle-on { color: var(--success); border-color: var(--success); }
+    .badge-aktif {
+        background: rgba(76,175,80,0.12); color: var(--success);
+        font-size: .72rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px;
+    }
+    .badge-nonaktif {
+        background: rgba(244,67,54,0.1); color: var(--danger);
+        font-size: .72rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px;
+    }
+    tr.row-nonaktif { opacity: .55; }
+
+    /* Modal */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(30,24,18,0.45);
+        align-items: center; justify-content: center; z-index: 999;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-card {
+        background: #fff; border-radius: 16px; padding: 2rem; max-width: 440px; width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-top: 4px solid var(--accent);
+    }
+    .modal-icon {
+        width: 52px; height: 52px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; margin-bottom: 1rem;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 700; color: var(--ink); margin-bottom: .5rem; }
+    .modal-product-tag {
+        display: inline-flex; align-items: center; gap: .4rem;
+        background: #F6F1E7; border-radius: 8px; padding: .5rem .8rem;
+        font-size: .85rem; font-weight: 600; color: var(--ink); margin: .8rem 0 1rem;
+    }
+    .modal-text { color: var(--ink-soft); font-size: .87rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: .7rem; }
+    .btn-danger, .btn-success {
+        border: none; padding: .65rem 1.4rem; border-radius: 9px;
+        font-weight: 600; font-size: .87rem; cursor: pointer;
+    }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-secondary {
+        background: transparent; color: var(--ink-soft); border: 1px solid var(--line);
+        padding: .65rem 1.4rem; border-radius: 9px; font-weight: 600; font-size: .87rem; cursor: pointer;
+    }
+</style>
+
+<div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1>Daftar Produk</h1>
+    <a href="{% url 'tambah_produk' %}" class="btn-primary" style="text-decoration:none;">+ Tambah Produk</a>
+</div>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Kode</th>
+            <th>Nama Produk</th>
+            <th>Kategori</th>
+            <th>Harga Jual</th>
+            <th>Stok</th>
+            <th>Status</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for produk in produk_list %}
+        <tr class="{% if not produk.is_active %}row-nonaktif{% endif %}">
+            <td>{{ produk.kode_produk }}</td>
+            <td>{{ produk.nama_produk }}</td>
+            <td>{{ produk.kategori }}</td>
+            <td>{{ produk.harga_jual }}</td>
+            <td>{{ produk.stok }}</td>
+            <td>
+                {% if produk.is_active %}
+                    <span class="badge-aktif">Aktif</span>
+                {% else %}
+                    <span class="badge-nonaktif">Nonaktif</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'edit_produk' produk.id %}" class="btn-edit">Edit</a>
+                {% if produk.is_active %}
+                    <button type="button"
+                        class="btn-toggle-off"
+                        onclick="openToggleModal('{{ produk.id }}', '{{ produk.nama_produk|escapejs }}', '{{ produk.kode_produk|escapejs }}', true)">
+                        Nonaktifkan
+                    </button>
+                {% else %}
+                    <button type="button"
+                        class="btn-toggle-on"
+                        onclick="openToggleModal('{{ produk.id }}', '{{ produk.nama_produk|escapejs }}', '{{ produk.kode_produk|escapejs }}', false)">
+                        Aktifkan
+                    </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7">Belum ada produk.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div class="modal-overlay" id="toggleModal">
+    <div class="modal-card">
+        <div class="modal-icon" id="modalIcon"></div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-product-tag" id="modalProductTag"></div>
+        <p class="modal-text" id="modalText"></p>
+        <form method="post" id="modalForm" class="modal-actions">
+            {% csrf_token %}
+            <button type="submit" id="modalSubmitBtn"></button>
+            <button type="button" class="btn-secondary" onclick="closeToggleModal()">Batal</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openToggleModal(produkId, nama, kode, isActive) {
+        const overlay = document.getElementById('toggleModal');
+        const icon = document.getElementById('modalIcon');
+        const title = document.getElementById('modalTitle');
+        const tag = document.getElementById('modalProductTag');
+        const text = document.getElementById('modalText');
+        const form = document.getElementById('modalForm');
+        const submitBtn = document.getElementById('modalSubmitBtn');
+
+        form.action = '/produk/toggle-status/' + produkId + '/';
+        tag.innerHTML = '&#128230; ' + nama + ' &middot; ' + kode;
+
+        if (isActive) {
+            icon.style.background = 'rgba(244,67,54,0.1)';
+            icon.style.color = 'var(--danger)';
+            icon.innerHTML = '&#9888;';
+            title.textContent = 'Yakin mau nonaktifkan produk ini?';
+            text.textContent = 'Produk ini nggak akan muncul saat buat transaksi baru, tapi tetap ada di Daftar Produk dengan status Nonaktif, dan bisa diaktifkan lagi kapan saja.';
+            submitBtn.className = 'btn-danger';
+            submitBtn.textContent = 'Ya, Nonaktifkan';
+        } else {
+            icon.style.background = 'rgba(76,175,80,0.12)';
+            icon.style.color = 'var(--success)';
+            icon.innerHTML = '&#10003;';
+            title.textContent = 'Aktifkan kembali produk ini?';
+            text.textContent = 'Produk ini akan muncul lagi di Daftar Produk dan bisa dipilih saat buat transaksi baru.';
+            submitBtn.className = 'btn-success';
+            submitBtn.textContent = 'Ya, Aktifkan';
+        }
+
+        overlay.classList.add('show');
+    }
+
+    function closeToggleModal() {
+        document.getElementById('toggleModal').classList.remove('show');
+    }
+
+    document.getElementById('toggleModal').addEventListener('click', function (e) {
+        if (e.target === this) closeToggleModal();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Struk Transaksi{% endblock %}
+{% block content %}
+<h1>Struk Transaksi</h1>
+<p><strong>No. Transaksi:</strong> {{ penjualan.no_transaksi }}</p>
+<p><strong>Tanggal:</strong> {{ penjualan.tanggal }}</p>
+<p><strong>Kasir:</strong> {{ penjualan.kasir }}</p>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Produk</th>
+            <th>Qty</th>
+            <th>Harga Satuan</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for detail in penjualan.detail.all %}
+        <tr>
+            <td>{{ detail.produk.nama_produk }}</td>
+            <td>{{ detail.qty }}</td>
+            <td>Rp{{ detail.harga_satuan }}</td>
+            <td>Rp{{ detail.subtotal }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h3>Total: Rp{{ penjualan.total_harga }}</h3>
+
+<a href="{% url 'buat_transaksi' %}">Buat Transaksi Baru</a>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Riwayat Transaksi{% endblock %}
+{% block content %}
+<h1>Riwayat Transaksi</h1>
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>No. Transaksi</th>
+            <th>Tanggal</th>
+            <th>Kasir</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for penjualan in penjualan_list %}
+        <tr>
+            <td>{{ penjualan.no_transaksi }}</td>
+            <td>{{ penjualan.tanggal }}</td>
+            <td>{{ penjualan.kasir }}</td>
+            <td>Rp{{ penjualan.total_harga }}</td>
+            <td>{{ penjualan.get_status_display }}</td>
+            <td><a href="{% url 'struk_transaksi' penjualan.id %}">Lihat Detail</a></td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">Belum ada transaksi.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

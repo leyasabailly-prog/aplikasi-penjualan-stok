@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{% if produk.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %} Produk{% endblock %}
+{% block content %}
+
+<style>
+    .confirm-card { max-width: 480px; background: #fff; border-radius: 12px; padding: 1.5rem; }
+    .confirm-text { color: var(--ink-soft); font-size: .9rem; margin: .8rem 0 1.3rem; line-height: 1.5; }
+    .btn-danger {
+        background: var(--danger); color: #fff; border: none; padding: .6rem 1.2rem;
+        border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer;
+    }
+    .btn-success {
+        background: var(--success); color: #fff; border: none; padding: .6rem 1.2rem;
+        border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer;
+    }
+    .btn-secondary {
+        background: transparent; color: var(--ink-soft); border: 1px solid var(--line);
+        padding: .6rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
+        text-decoration: none; display: inline-block;
+    }
+</style>
+
+<h1>{% if produk.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %} Produk</h1>
+
+<div class="confirm-card">
+    <p class="confirm-text">
+        {% if produk.is_active %}
+            Yakin mau nonaktifkan produk <strong>{{ produk.nama_produk }}</strong> ({{ produk.kode_produk }})?
+            Produk ini nggak akan muncul saat buat transaksi baru, tapi tetap ada di Daftar Produk
+            dengan status nonaktif, dan bisa diaktifkan lagi kapan saja.
+        {% else %}
+            Aktifkan kembali produk <strong>{{ produk.nama_produk }}</strong> ({{ produk.kode_produk }})?
+            Produk ini akan muncul lagi dan bisa dipakai untuk transaksi.
+        {% endif %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="{% if produk.is_active %}btn-danger{% else %}btn-success{% endif %}">
+            {% if produk.is_active %}Ya, Nonaktifkan{% else %}Ya, Aktifkan{% endif %}
+        </button>
+        <a href="{% url 'daftar_produk' %}" class="btn-secondary">Batal</a>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Tambah Produk{% endblock %}
+{% block content %}
+
+<style>
+    .form-card { max-width: 640px; background: var(--card-bg, #fff); border-radius: 12px; padding: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--ink); margin-bottom: .3rem; }
+    .form-input, .form-input-file {
+        width: 100%; padding: .55rem .7rem; border: 1px solid var(--line);
+        border-radius: 8px; font-size: .85rem; background: #fff; color: var(--ink);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-errors { color: var(--danger); font-size: .75rem; margin-top: .25rem; }
+    .form-actions { display: flex; gap: .6rem; margin-top: 1.3rem; }
+    .btn-primary {
+        background: var(--accent); color: #fff; border: none; padding: .6rem 1.2rem;
+        border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer;
+    }
+    .btn-secondary {
+        background: transparent; color: var(--ink-soft); border: 1px solid var(--line);
+        padding: .6rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: .85rem;
+        text-decoration: none; display: inline-block;
+    }
+</style>
+<h1>{% if mode == 'edit' %}Edit Produk{% else %}Tambah Produk{% endif %}</h1>
+<div class="form-card">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Kode Produk</label>
+                {{ form.kode_produk }}
+                {% for e in form.kode_produk.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label>Nama Produk</label>
+                {{ form.nama_produk }}
+                {% for e in form.nama_produk.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Kategori</label>
+                {{ form.kategori }}
+                {% for e in form.kategori.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label>Supplier</label>
+                {{ form.supplier }}
+                {% for e in form.supplier.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Harga Beli</label>
+                {{ form.harga_beli }}
+                {% for e in form.harga_beli.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label>Harga Jual</label>
+                {{ form.harga_jual }}
+                {% for e in form.harga_jual.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Stok Awal</label>
+                {{ form.stok }}
+                {% for e in form.stok.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label>Stok Minimum</label>
+                {{ form.stok_minimum }}
+                {% for e in form.stok_minimum.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Satuan</label>
+                {{ form.satuan }}
+                {% for e in form.satuan.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label>Gambar</label>
+                {{ form.gambar }}
+                {% for e in form.gambar.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+            </div>
+        </div>
+        <div class="form-group" style="display:flex; align-items:center; gap:.5rem;">
+            {{ form.is_active }}
+            <label style="margin:0;">Produk aktif (tampil di daftar produk)</label>
+        </div>
+        
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Simpan Produk</button>
+            <a href="{% url 'daftar_produk' %}" class="btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

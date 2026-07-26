@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+{{ tren_label|json_script:"tren-label-data" }}
+{{ tren_data|json_script:"tren-angka-data" }}
+
+<style>
+/* ============================================================
+   DASHBOARD UPGRADE — Modern Command Center
+   ============================================================ */
+
+/* ── Animated gradient header ── */
+.db-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.6rem;
+    padding: 1.4rem 1.6rem;
+    background: linear-gradient(135deg, #0F1C3F 0%, #1a3170 60%, #2557D6 100%);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.db-header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+}
+.db-header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(37,87,214,0.3);
+}
+.db-header-left { position: relative; z-index: 1; }
+.db-eyebrow {
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: .3rem;
+}
+.db-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    letter-spacing: -.02em;
+}
+.db-subtitle {
+    font-size: .8rem;
+    color: rgba(255,255,255,0.55);
+    margin-top: .25rem;
+}
+.db-header-right {
+    position: relative;
+    z-index: 1;
+    text-align: right;
+}
+.db-date-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: .35rem .85rem;
+    font-size: .78rem;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    margin-bottom: .4rem;
+}
+.db-user-chip {
+    font-size: .75rem;
+    color: rgba(255,255,255,0.45);
+}
+.db-user-chip strong { color: rgba(255,255,255,0.8); }
+
+/* ── KPI cards row ── */
+.db-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .9rem;
+    margin-bottom: 1.1rem;
+}
+.db-kpi {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow .2s, transform .2s;
+}
+.db-kpi:hover {
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+.db-kpi-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    margin-bottom: .75rem;
+}
+.db-kpi-icon.blue  { background: #E9EFFD; color: #2557D6; }
+.db-kpi-icon.green { background: #E7F7ED; color: #16A34A; }
+.db-kpi-icon.amber { background: #FDF3E3; color: #D97706; }
+.db-kpi-icon.red   { background: #FCEAEA; color: #DC2626; }
+.db-kpi-label {
+    font-size: .73rem;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: .2rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.db-kpi-val {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin-bottom: .3rem;
+}
+.db-kpi-sub {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .15rem .5rem;
+    border-radius: 20px;
+}
+.db-kpi-sub.up   { background: #E7F7ED; color: #16A34A; }
+.db-kpi-sub.down { background: #FCEAEA; color: #DC2626; }
+.db-kpi-sub.neu  { background: #F0F1F5; color: var(--ink-soft); }
+
+/* ── Main grid ── */
+.db-main-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1rem;
+}
+
+/* ── Section cards ── */
+.db-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.db-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem .8rem;
+    border-bottom: 1px solid var(--line);
+}
+.db-card-head-title {
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.db-card-head-sub {
+    font-size: .72rem;
+    color: var(--ink-faint);
+    margin-top: .05rem;
+}
+.db-badge {
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .2rem .55rem;
+    border-radius: 20px;
+    background: var(--accent-tint);
+    color: var(--accent);
+}
+.db-card-body { padding: 1rem 1.2rem; }
+
+/* ── Chart wrapper ── */
+.db-chart-wrap { position: relative; height: 150px; }
+
+/* ── Progress bar stock ── */
+.db-stock-row {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: .8rem;
+}
+.db-stock-row:last-child { margin-bottom: 0; }
+.db-stock-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+    flex-shrink: 0;
+}
+.db-stock-info { flex: 1; }
+.db-stock-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: .3rem;
+}
+.db-stock-label {
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+.db-stock-count {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+.db-progress {
+    width: 100%;
+    height: 7px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+}
+.db-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width .6s ease;
+}
+
+/* ── Top products ── */
+.db-prod-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--line);
+}
+.db-prod-row:last-child { border-bottom: none; }
+.db-prod-rank {
+    width: 24px;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--ink-faint);
+    text-align: center;
+    flex-shrink: 0;
+}
+.db-prod-name {
+    flex: 1;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.db-prod-track {
+    width: 80px;
+    height: 6px;
+    border-radius: 99px;
+    background: var(--line);
+    overflow: hidden;
+}
+.db-prod-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #2557D6, #5B88F0);
+}
+.db-prod-qty {
+    width: 30px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ── Activity feed ── */
+.db-act-item {
+    display: flex;
+    gap: .7rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--line);
+}
+.db-act-item:last-child { border-bottom: none; }
+.db-act-dot-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: .2rem;
+}
+.db-act-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.db-act-line {
+    width: 1px;
+    flex: 1;
+    background: var(--line);
+    margin-top: .3rem;
+}
+.db-act-item:last-child .db-act-line { display: none; }
+.db-act-text {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: .1rem;
+}
+.db-act-sub {
+    font-size: .72rem;
+    color: var(--ink-faint);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) { .db-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .db-main-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .db-kpi-row { grid-template-columns: 1fr; } }
+</style>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="db-header">
+    <div class="db-header-left">
+        <div class="db-eyebrow">Ringkasan Operasional</div>
+        <h1 class="db-title">Command Center</h1>
+        <div class="db-subtitle">Pantau performa toko secara real-time</div>
+    </div>
+    <div class="db-header-right">
+        <div class="db-date-chip">
+            <i class="ti ti-calendar"></i>
+            {{ hari_ini|date:"l, d F Y" }}
+        </div>
+        <div class="db-user-chip">
+            Masuk sebagai <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ KPI CARDS ══════════ -->
+<div class="db-kpi-row">
+    <!-- Penjualan Hari Ini -->
+    <div class="db-kpi">
+        <div class="db-kpi-icon blue"><i class="ti ti-currency-dollar"></i></div>
+        <div class="db-kpi-label">Penjualan Hari Ini</div>
+        <div class="db-kpi-val" style="font-size:1.15rem;">Rp{{ total_hari_ini|floatformat:0 }}</div>
+        <span class="db-kpi-sub {% if persen_perubahan >= 0 %}up{% else %}down{% endif %}">
+            {% if persen_perubahan >= 0 %}▲{% else %}▼{% endif %} {{ persen_perubahan }}% vs kemarin
+        </span>
+    </div>
+    <!-- Total Produk -->
+    <div class="db-kpi">
+        <div class="db-kpi-icon green"><i class="ti ti-package"></i></div>
+        <div class="db-kpi-label">Total Produk</div>
+        <div class="db-kpi-val">{{ total_produk }}</div>
+        <span class="db-kpi-sub neu"><i class="ti ti-minus" style="font-size:.65rem;"></i> Produk terdaftar</span>
+    </div>
+    <!-- Stok Menipis -->
+    <div class="db-kpi">
+        <div class="db-kpi-icon amber"><i class="ti ti-alert-triangle"></i></div>
+        <div class="db-kpi-label">Stok Menipis</div>
+        <div class="db-kpi-val">{{ stok_menipis }}</div>
+        <span class="db-kpi-sub {% if stok_menipis > 0 %}down{% else %}up{% endif %}">
+            {% if stok_menipis > 0 %}⚠ Perlu perhatian{% else %}✓ Semua aman{% endif %}
+        </span>
+    </div>
+    <!-- Stok Habis -->
+    <div class="db-kpi">
+        <div class="db-kpi-icon red"><i class="ti ti-circle-x"></i></div>
+        <div class="db-kpi-label">Stok Habis</div>
+        <div class="db-kpi-val">{{ stok_habis }}</div>
+        <span class="db-kpi-sub {% if stok_habis > 0 %}down{% else %}up{% endif %}">
+            {% if stok_habis > 0 %}✗ Segera restock{% else %}✓ Tidak ada{% endif %}
+        </span>
+    </div>
+</div>
+
+<!-- ══════════ MAIN GRID ══════════ -->
+<div class="db-main-grid">
+
+    <!-- LEFT COLUMN -->
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+        <!-- Tren Chart -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Tren Penjualan 7 Hari</div>
+                    <div class="db-card-head-sub">Pendapatan harian dalam seminggu terakhir</div>
+                </div>
+                <span class="db-badge">Live</span>
+            </div>
+            <div class="db-card-body">
+                <div class="db-chart-wrap">
+                    <canvas id="chartTren"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Produk -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Produk Terlaris Minggu Ini</div>
+                    <div class="db-card-head-sub">Berdasarkan unit terjual</div>
+                </div>
+                <span class="db-badge" style="background:#E7F7ED;color:#16A34A;">Top {{ terlaris|length }}</span>
+            </div>
+            <div class="db-card-body" style="padding-top:.6rem; padding-bottom:.6rem;">
+                {% for p in terlaris %}
+                <div class="db-prod-row">
+                    <div class="db-prod-rank">#{{ forloop.counter }}</div>
+                    <div class="db-prod-name">{{ p.produk__nama_produk }}</div>
+                    <div class="db-prod-track">
+                        <div class="db-prod-fill" style="width: {% widthratio p.total_qty max_qty 100 %}%;"></div>
+                    </div>
+                    <div class="db-prod-qty">{{ p.total_qty }}</div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding:1.5rem 0; color:var(--ink-faint); font-size:.85rem;">
+                    <i class="ti ti-shopping-cart-off" style="font-size:1.8rem; display:block; margin-bottom:.4rem; opacity:.4;"></i>
+                    Belum ada transaksi minggu ini
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div><!-- /left -->
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+        <!-- Status Stok -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Status Stok</div>
+                    <div class="db-card-head-sub">Kondisi ketersediaan produk</div>
+                </div>
+                <span class="db-badge" style="background:#F0F1F5;color:var(--ink-soft);">{{ total_produk }} total</span>
+            </div>
+            <div class="db-card-body">
+
+                <!-- Aman -->
+                <div class="db-stock-row">
+                    <div class="db-stock-icon" style="background:#E7F7ED; color:#16A34A;">
+                        <i class="ti ti-circle-check"></i>
+                    </div>
+                    <div class="db-stock-info">
+                        <div class="db-stock-label-row">
+                            <span class="db-stock-label">Stok Aman</span>
+                            <span class="db-stock-count">{{ stok_aman }}</span>
+                        </div>
+                        <div class="db-progress">
+                            <div class="db-progress-fill" style="width: {% widthratio stok_aman total_produk 100 %}%; background: #16A34A;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menipis -->
+                <div class="db-stock-row">
+                    <div class="db-stock-icon" style="background:#FDF3E3; color:#D97706;">
+                        <i class="ti ti-alert-triangle"></i>
+                    </div>
+                    <div class="db-stock-info">
+                        <div class="db-stock-label-row">
+                            <span class="db-stock-label">Stok Menipis</span>
+                            <span class="db-stock-count">{{ stok_menipis }}</span>
+                        </div>
+                        <div class="db-progress">
+                            <div class="db-progress-fill" style="width: {% widthratio stok_menipis total_produk 100 %}%; background: #D97706;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Habis -->
+                <div class="db-stock-row">
+                    <div class="db-stock-icon" style="background:#FCEAEA; color:#DC2626;">
+                        <i class="ti ti-circle-x"></i>
+                    </div>
+                    <div class="db-stock-info">
+                        <div class="db-stock-label-row">
+                            <span class="db-stock-label">Stok Habis</span>
+                            <span class="db-stock-count">{{ stok_habis }}</span>
+                        </div>
+                        <div class="db-progress">
+                            <div class="db-progress-fill" style="width: {% widthratio stok_habis total_produk 100 %}%; background: #DC2626;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aktivitas -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Aktivitas Terbaru</div>
+                    <div class="db-card-head-sub">Log transaksi & stok masuk</div>
+                </div>
+            </div>
+            <div class="db-card-body" style="padding-top:.6rem; padding-bottom:.6rem;">
+                {% for a in aktivitas %}
+                <div class="db-act-item">
+                    <div class="db-act-dot-wrap">
+                        <div class="db-act-dot" style="background: {% if a.jenis == 'transaksi' %}#16A34A{% else %}#D97706{% endif %};"></div>
+                        <div class="db-act-line"></div>
+                    </div>
+                    <div style="flex:1; padding-bottom:.4rem;">
+                        <div class="db-act-text">{{ a.teks }}</div>
+                        <div class="db-act-sub">{{ a.sub }} &middot; {{ a.waktu|timesince }} lalu</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding:1.5rem 0; color:var(--ink-faint); font-size:.85rem;">
+                    <i class="ti ti-clipboard-off" style="font-size:1.8rem; display:block; margin-bottom:.4rem; opacity:.4;"></i>
+                    Belum ada aktivitas
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div><!-- /right -->
+</div><!-- /main-grid -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const trenLabel = JSON.parse(document.getElementById('tren-label-data').textContent);
+const trenData  = JSON.parse(document.getElementById('tren-angka-data').textContent);
+
+new Chart(document.getElementById('chartTren'), {
+    type: 'line',
+    data: {
+        labels: trenLabel,
+        datasets: [{
+            data: trenData,
+            borderColor: '#2557D6',
+            backgroundColor: (ctx) => {
+                const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 150);
+                g.addColorStop(0, 'rgba(37,87,214,0.18)');
+                g.addColorStop(1, 'rgba(37,87,214,0)');
+                return g;
+            },
+            fill: true,
+            tension: 0.45,
+            pointRadius: 4,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#2557D6',
+            pointBorderWidth: 2,
+            borderWidth: 2.5,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: {
+            backgroundColor: '#0F1C3F',
+            titleColor: 'rgba(255,255,255,.6)',
+            bodyColor: '#fff',
+            bodyFont: { weight: '700', size: 13 },
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+                label: ctx => ' Rp' + ctx.parsed.y.toLocaleString('id-ID')
+            }
+        }},
+        scales: {
+            y: {
+                display: true,
+                grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                ticks: { font: { size: 10 }, color: '#8A93A6',
+                    callback: v => 'Rp' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 10 }, color: '#8A93A6' }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
