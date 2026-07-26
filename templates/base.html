@@ -56,6 +56,13 @@
             padding: 1.4rem 1rem;
             display: flex;
             flex-direction: column;
+            position: relative;
+        }
+        .sidebar-top-row { display: flex; align-items: center; justify-content: flex-start; gap: .6rem; }
+        .sidebar-toggle {
+            display: none;
+            background: transparent; border: none; color: #fff;
+            font-size: 1.3rem; cursor: pointer; padding: .3rem .4rem;
         }
         .sidebar-brand {
             font-family: 'Inter', sans-serif;
@@ -144,12 +151,15 @@
         .stamp.danger { color: var(--danger); background: var(--danger-tint); }
 
         /* ===== Tabel ===== */
-        table {
-            .table-scroll {
+        .table-scroll {
             width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             border-radius: var(--radius);
+            box-shadow: inset -12px 0 10px -10px rgba(0,0,0,0.15);
+        }
+        table {
+            width: 100%;
             min-width: 560px;
             border-collapse: collapse;
             background: var(--surface);
@@ -239,12 +249,22 @@
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
             .app-shell { flex-direction: column; }
-            .sidebar { width: 100%; flex-direction: row; align-items: center; padding: .7rem .9rem; overflow-x: auto; }
-            .sidebar-brand { flex-shrink: 0; }
+            .sidebar { width: 100%; padding: .8rem .9rem; }
             .sidebar-sub, .nav-label { display: none; }
-            .nav-list { display: flex; margin-left: 1rem; }
+            .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
+            .sidebar-panel {
+                display: none;
+                position: absolute;
+                top: 100%; left: 0; right: 0;
+                background: var(--sidebar-bg);
+                padding: .5rem .9rem 1rem;
+                z-index: 50;
+                box-shadow: 0 12px 20px rgba(0,0,0,0.25);
+            }
+            .sidebar-panel.open { display: block; }
+            .nav-list { display: flex; flex-direction: column; gap: .15rem; margin: .4rem 0 0; }
             .nav-list a { white-space: nowrap; }
-            .sidebar-user { margin-top: 0; margin-left: auto; flex-shrink: 0; }
+            .sidebar-user { margin-top: .8rem; margin-left: 0; }
             .main-area { padding: 1.1rem 1rem 2rem; }
         }
     </style>
@@ -253,31 +273,38 @@
 <div class="app-shell">
     {% if user.is_authenticated %}
     <aside class="sidebar">
-        <a class="sidebar-brand" href="{% url 'dashboard' %}"><span class="mark">TK</span>Toko Kita</a>
+        <div class="sidebar-top-row">
+            <button type="button" class="sidebar-toggle" onclick="document.getElementById('sidebarPanel').classList.toggle('open')" aria-label="Buka menu">
+                <i class="ti ti-menu-2"></i>
+            </button>
+            <a class="sidebar-brand" href="{% url 'dashboard' %}"><span class="mark">TK</span>Toko Kita</a>
+        </div>
         <div class="sidebar-sub">Retail Ops</div>
 
-        <div class="nav-label">Menu</div>
-        <ul class="nav-list">
-            {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'gudang' %}
-            <li><a href="{% url 'dashboard' %}"><i class="ti ti-layout-dashboard"></i>Dashboard</a></li>
-            {% endif %}
-            <li><a href="{% url 'daftar_produk' %}"><i class="ti ti-box"></i>Produk</a></li>
-            {% if user.is_superuser or user.profile.role == 'kasir' %}
-            <li><a href="{% url 'buat_transaksi' %}"><i class="ti ti-receipt"></i>Buat Transaksi</a></li>
-            {% endif %}
-            {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'kasir' %}
-            <li><a href="{% url 'riwayat_transaksi' %}"><i class="ti ti-history"></i>Riwayat</a></li>
-            {% endif %}
-            <li><a href="{% url 'form_stok_masuk' %}"><i class="ti ti-package-import"></i>Stok Masuk</a></li>
-        </ul>
+        <div class="sidebar-panel" id="sidebarPanel">
+            <div class="nav-label">Menu</div>
+            <ul class="nav-list">
+                {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'gudang' %}
+                <li><a href="{% url 'dashboard' %}"><i class="ti ti-layout-dashboard"></i>Dashboard</a></li>
+                {% endif %}
+                <li><a href="{% url 'daftar_produk' %}"><i class="ti ti-box"></i>Produk</a></li>
+                {% if user.is_superuser or user.profile.role == 'kasir' %}
+                <li><a href="{% url 'buat_transaksi' %}"><i class="ti ti-receipt"></i>Buat Transaksi</a></li>
+                {% endif %}
+                {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'kasir' %}
+                <li><a href="{% url 'riwayat_transaksi' %}"><i class="ti ti-history"></i>Riwayat</a></li>
+                {% endif %}
+                <li><a href="{% url 'form_stok_masuk' %}"><i class="ti ti-package-import"></i>Stok Masuk</a></li>
+            </ul>
 
-        <div class="sidebar-user">
-            <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
-            <div class="who">
-                <div class="name">{{ user.username }}</div>
-                <div class="role">{% if user.profile.role %}{{ user.profile.get_role_display }}{% else %}Pengguna{% endif %}</div>
+            <div class="sidebar-user">
+                <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
+                <div class="who">
+                    <div class="name">{{ user.username }}</div>
+                    <div class="role">{% if user.profile.role %}{{ user.profile.get_role_display }}{% else %}Pengguna{% endif %}</div>
+                </div>
+                <a class="logout-btn" href="{% url 'logout' %}" title="Logout"><i class="ti ti-logout"></i></a>
             </div>
-            <a class="logout-btn" href="{% url 'logout' %}" title="Logout"><i class="ti ti-logout"></i></a>
         </div>
     </aside>
     {% endif %}
