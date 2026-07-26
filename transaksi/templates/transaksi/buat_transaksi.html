@@ -3,14 +3,6 @@
 {% block content %}
 <h1>Buat Transaksi Penjualan</h1>
 
-{% if messages %}
-<ul>
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-
 <h3>Tambah Produk ke Keranjang</h3>
 <form method="post">
     {% csrf_token %}
