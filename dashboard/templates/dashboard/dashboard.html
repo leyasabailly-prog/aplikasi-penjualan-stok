@@ -343,6 +343,7 @@
 
 <!-- ══════════ KPI CARDS ══════════ -->
 <div class="db-kpi-row">
+    {% if is_admin %}
     <!-- Penjualan Hari Ini -->
     <div class="db-kpi">
         <div class="db-kpi-icon blue"><i class="ti ti-currency-dollar"></i></div>
@@ -352,6 +353,7 @@
             {% if persen_perubahan >= 0 %}▲{% else %}▼{% endif %} {{ persen_perubahan }}% vs kemarin
         </span>
     </div>
+    {% endif %}
     <!-- Total Produk -->
     <div class="db-kpi">
         <div class="db-kpi-icon green"><i class="ti ti-package"></i></div>
@@ -380,8 +382,9 @@
 </div>
 
 <!-- ══════════ MAIN GRID ══════════ -->
-<div class="db-main-grid">
+<div class="db-main-grid" {% if not is_admin %}style="grid-template-columns: 1fr;"{% endif %}>
 
+    {% if is_admin %}
     <!-- LEFT COLUMN -->
     <div style="display:flex; flex-direction:column; gap:1rem;">
 
@@ -416,7 +419,7 @@
                     <div class="db-prod-rank">#{{ forloop.counter }}</div>
                     <div class="db-prod-name">{{ p.produk__nama_produk }}</div>
                     <div class="db-prod-track">
-                        <div class="db-prod-fill" style="width: {% widthratio p.total_qty max_qty 100 %}%;"></div>
+                        <div class="db-prod-fill" style="--w: {% widthratio p.total_qty max_qty 100 %}%;"></div>
                     </div>
                     <div class="db-prod-qty">{{ p.total_qty }}</div>
                 </div>
@@ -430,6 +433,7 @@
         </div>
 
     </div><!-- /left -->
+    {% endif %}
 
     <!-- RIGHT COLUMN -->
     <div style="display:flex; flex-direction:column; gap:1rem;">
@@ -456,8 +460,7 @@
                             <span class="db-stock-count">{{ stok_aman }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_aman total_produk 100 %}%; background: #16A34A;"></div>
-                        </div>
+                            <div class="db-progress-fill db-fill-aman" style="--w: {% widthratio stok_aman total_produk 100 %}%;"></div>
                     </div>
                 </div>
 
@@ -472,7 +475,7 @@
                             <span class="db-stock-count">{{ stok_menipis }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_menipis total_produk 100 %}%; background: #D97706;"></div>
+                            <div class="db-progress-fill db-fill-menipis" style="--w: {% widthratio stok_menipis total_produk 100 %}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -488,13 +491,14 @@
                             <span class="db-stock-count">{{ stok_habis }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_habis total_produk 100 %}%; background: #DC2626;"></div>
+                            <div class="db-progress-fill db-fill-habis" style="--w: {% widthratio stok_habis total_produk 100 %}%;"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        {% if is_admin %}
         <!-- Aktivitas -->
         <div class="db-card">
             <div class="db-card-head">
@@ -507,7 +511,7 @@
                 {% for a in aktivitas %}
                 <div class="db-act-item">
                     <div class="db-act-dot-wrap">
-                        <div class="db-act-dot" style="background: {% if a.jenis == 'transaksi' %}#16A34A{% else %}#D97706{% endif %};"></div>
+                        <div class="db-act-dot {% if a.jenis == 'transaksi' %}db-act-dot-ok{% else %}db-act-dot-warn{% endif %}"></div>
                         <div class="db-act-line"></div>
                     </div>
                     <div style="flex:1; padding-bottom:.4rem;">
@@ -523,16 +527,19 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 
     </div><!-- /right -->
 </div><!-- /main-grid -->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
+const chartTrenEl = document.getElementById('chartTren');
+if (chartTrenEl) {
 const trenLabel = JSON.parse(document.getElementById('tren-label-data').textContent);
 const trenData  = JSON.parse(document.getElementById('tren-angka-data').textContent);
 
-new Chart(document.getElementById('chartTren'), {
+new Chart(chartTrenEl, {
     type: 'line',
     data: {
         labels: trenLabel,
@@ -582,5 +589,6 @@ new Chart(document.getElementById('chartTren'), {
         }
     }
 });
+}
 </script>
 {% endblock %}
