@@ -7,7 +7,7 @@ from .models import Penjualan, DetailPenjualan
 
 
 @login_required
-@role_required('admin', 'kasir')
+@role_required( 'kasir')
 def buat_transaksi(request):
     keranjang = request.session.get('keranjang', {})
 
@@ -99,7 +99,11 @@ def struk(request, penjualan_id):
     return render(request, 'transaksi/struk.html', {'penjualan': penjualan})
 
 @login_required
+<<<<<<< HEAD
 @role_required('admin', 'kasir')
+=======
+@role_required('admin' , 'kasir')
+>>>>>>> 11c1df0fb99b009737393d18cae10b24a2422527
 def riwayat_transaksi(request):
     penjualan_list = Penjualan.objects.all().order_by('-tanggal')
     return render(request, 'transaksi/riwayat_transaksi.html', {'penjualan_list': penjualan_list})
