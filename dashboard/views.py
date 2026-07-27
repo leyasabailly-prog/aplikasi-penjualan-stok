@@ -36,6 +36,30 @@ def dashboard_view(request):
         tren_label.append(tgl.strftime('%d/%m'))
         tren_data.append(float(total))
 
+    tahun_ini = today.year
+    tahun_lalu = tahun_ini - 1
+    bulan_label = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+
+    penjualan_bulan_lalu = []
+    penjualan_bulan_ini = []
+    for m in range(1, 13):
+        total_lalu = Penjualan.objects.filter(
+            tanggal__year=tahun_lalu, tanggal__month=m, status='selesai'
+        ).aggregate(t=Sum('total_harga'))['t'] or 0
+        total_ini = Penjualan.objects.filter(
+            tanggal__year=tahun_ini, tanggal__month=m, status='selesai'
+        ).aggregate(t=Sum('total_harga'))['t'] or 0
+        penjualan_bulan_lalu.append(float(total_lalu))
+        penjualan_bulan_ini.append(float(total_ini))
+
+    total_tahun_lalu = sum(penjualan_bulan_lalu)
+    total_tahun_ini = sum(penjualan_bulan_ini)
+
+    if total_tahun_lalu > 0:
+        persen_tahun = round(((total_tahun_ini - total_tahun_lalu) / total_tahun_lalu) * 100, 1)
+    else:
+        persen_tahun = 0
+
     produk_qs = Produk.objects.filter(is_active=True)
     stok_aman = produk_qs.filter(stok__gt=F('stok_minimum')).count()
     stok_menipis = produk_qs.filter(stok__gt=0, stok__lte=F('stok_minimum')).count()
@@ -79,6 +103,14 @@ def dashboard_view(request):
         'persen_perubahan': persen_perubahan,
         'tren_label': tren_label,
         'tren_data': tren_data,
+        'bulan_label': bulan_label,
+        'penjualan_bulan_ini': penjualan_bulan_ini,
+        'penjualan_bulan_lalu': penjualan_bulan_lalu,
+        'tahun_ini': tahun_ini,
+        'tahun_lalu': tahun_lalu,
+        'total_tahun_ini': total_tahun_ini,
+        'total_tahun_lalu': total_tahun_lalu,
+        'persen_tahun': persen_tahun,
         'stok_aman': stok_aman,
         'stok_menipis': stok_menipis,
         'stok_habis': stok_habis,

@@ -56,6 +56,15 @@
             padding: 1.4rem 1rem;
             display: flex;
             flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
         }
         .sidebar-brand {
             font-family: 'Inter', sans-serif;
@@ -105,7 +114,8 @@
         .nav-list a.active { background: var(--accent); color: #fff; font-weight: 600; }
 
         .sidebar-user {
-            margin-top: auto;
+            flex-shrink: 0;
+            margin-top: .75rem;
             background: rgba(255,255,255,0.05);
             border-radius: 10px;
             padding: .65rem;
@@ -234,12 +244,13 @@
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
             .app-shell { flex-direction: column; }
-            .sidebar { width: 100%; flex-direction: row; align-items: center; padding: .7rem .9rem; overflow-x: auto; }
+            .sidebar { width: 100%; height: auto; position: static; overflow: visible; flex-direction: row; align-items: center; padding: .7rem .9rem; }
+            .sidebar-scroll { display: flex; align-items: center; overflow-x: auto; overflow-y: visible; flex: 1 1 auto; }
             .sidebar-brand { flex-shrink: 0; }
             .sidebar-sub, .nav-label { display: none; }
             .nav-list { display: flex; margin-left: 1rem; }
             .nav-list a { white-space: nowrap; }
-            .sidebar-user { margin-top: 0; margin-left: auto; flex-shrink: 0; }
+            .sidebar-user { margin-top: 0; margin-left: .75rem; flex-shrink: 0; }
             .main-area { padding: 1.1rem 1rem 2rem; }
         }
     </style>
@@ -251,20 +262,22 @@
         <a class="sidebar-brand" href="{% url 'dashboard' %}"><span class="mark">TK</span>Toko Kita</a>
         <div class="sidebar-sub">Retail Ops</div>
 
-        <div class="nav-label">Menu</div>
-        <ul class="nav-list">
-            {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'gudang' %}
-            <li><a href="{% url 'dashboard' %}"><i class="ti ti-layout-dashboard"></i>Dashboard</a></li>
-            {% endif %}
-            <li><a href="{% url 'daftar_produk' %}"><i class="ti ti-box"></i>Produk</a></li>
-            {% if user.is_superuser or user.profile.role == 'kasir' %}
-            <li><a href="{% url 'buat_transaksi' %}"><i class="ti ti-receipt"></i>Buat Transaksi</a></li>
-            {% endif %}
-            {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'kasir' %}
-            <li><a href="{% url 'riwayat_transaksi' %}"><i class="ti ti-history"></i>Riwayat</a></li>
-            {% endif %}
-            <li><a href="{% url 'form_stok_masuk' %}"><i class="ti ti-package-import"></i>Stok Masuk</a></li>
-        </ul>
+        <div class="sidebar-scroll">
+            <div class="nav-label">Menu</div>
+            <ul class="nav-list">
+                {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'gudang' %}
+                <li><a href="{% url 'dashboard' %}"><i class="ti ti-layout-dashboard"></i>Dashboard</a></li>
+                {% endif %}
+                <li><a href="{% url 'daftar_produk' %}"><i class="ti ti-box"></i>Produk</a></li>
+                {% if user.is_superuser or user.profile.role == 'kasir' %}
+                <li><a href="{% url 'buat_transaksi' %}"><i class="ti ti-receipt"></i>Buat Transaksi</a></li>
+                {% endif %}
+                {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'kasir' %}
+                <li><a href="{% url 'riwayat_transaksi' %}"><i class="ti ti-history"></i>Riwayat</a></li>
+                {% endif %}
+                <li><a href="{% url 'form_stok_masuk' %}"><i class="ti ti-package-import"></i>Stok Masuk</a></li>
+            </ul>
+        </div>
 
         <div class="sidebar-user">
             <span class="avatar">{{ user.username|slice:":1"|upper }}</span>

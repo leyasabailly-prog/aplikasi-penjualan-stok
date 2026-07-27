@@ -4,6 +4,10 @@
 
 {{ tren_label|json_script:"tren-label-data" }}
 {{ tren_data|json_script:"tren-angka-data" }}
+{{ bulan_label|json_script:"bulan-label-data" }}
+{{ penjualan_bulan_ini|json_script:"bulan-ini-data" }}
+{{ penjualan_bulan_lalu|json_script:"bulan-lalu-data" }}
+{{ ringkasan_tahun|json_script:"ringkasan-tahun-data" }}
 
 <style>
 /* ============================================================
@@ -144,11 +148,32 @@
 .db-kpi-sub.down { background: #FCEAEA; color: #DC2626; }
 .db-kpi-sub.neu  { background: #F0F1F5; color: var(--ink-soft); }
 
-/* ── Main grid ── */
-.db-main-grid {
+/* ── Dashboard grid (satu grid tunggal, kolom kiri & kanan selalu sejajar presisi) ── */
+.db-dashboard-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-columns: 1.6fr 1fr;
+    align-items: start;
     gap: 1rem;
+}
+.db-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.db-chart-wrap-lg { position: relative; height: 220px; }
+.db-legend-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-left: .9rem;
+}
+.db-legend-dot span.dot {
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
 }
 
 /* ── Section cards ── */
@@ -319,7 +344,7 @@
 
 /* ── Responsive ── */
 @media (max-width: 1100px) { .db-kpi-row { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 900px) { .db-main-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .db-dashboard-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .db-kpi-row { grid-template-columns: 1fr; } }
 </style>
 
@@ -379,11 +404,11 @@
     </div>
 </div>
 
-<!-- ══════════ MAIN GRID ══════════ -->
-<div class="db-main-grid">
+<!-- ══════════ DASHBOARD GRID (kolom kiri & kanan disatukan agar sejajar presisi) ══════════ -->
+<div class="db-dashboard-grid">
 
-    <!-- LEFT COLUMN -->
-    <div style="display:flex; flex-direction:column; gap:1rem;">
+    <!-- KOLOM KIRI -->
+    <div class="db-col">
 
         <!-- Tren Chart -->
         <div class="db-card">
@@ -416,7 +441,7 @@
                     <div class="db-prod-rank">#{{ forloop.counter }}</div>
                     <div class="db-prod-name">{{ p.produk__nama_produk }}</div>
                     <div class="db-prod-track">
-                        <div class="db-prod-fill" style="width: {% widthratio p.total_qty max_qty 100 %}%;"></div>
+                        <div class="db-prod-fill" style="--w: {% widthratio p.total_qty max_qty 100 %}%;"></div>
                     </div>
                     <div class="db-prod-qty">{{ p.total_qty }}</div>
                 </div>
@@ -429,10 +454,29 @@
             </div>
         </div>
 
-    </div><!-- /left -->
+        <!-- Penjualan Per Bulan -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Penjualan Per Bulan</div>
+                    <div class="db-card-head-sub">Perbandingan {{ tahun_lalu }} vs {{ tahun_ini }}</div>
+                </div>
+                <div>
+                    <span class="db-legend-dot"><span class="dot" style="background:#B7C6EA;"></span>{{ tahun_lalu }}</span>
+                    <span class="db-legend-dot"><span class="dot" style="background:#2557D6;"></span>{{ tahun_ini }}</span>
+                </div>
+            </div>
+            <div class="db-card-body">
+                <div class="db-chart-wrap-lg">
+                    <canvas id="chartBulan"></canvas>
+                </div>
+            </div>
+        </div>
 
-    <!-- RIGHT COLUMN -->
-    <div style="display:flex; flex-direction:column; gap:1rem;">
+    </div><!-- /kolom kiri -->
+
+    <!-- KOLOM KANAN -->
+    <div class="db-col">
 
         <!-- Status Stok -->
         <div class="db-card">
@@ -456,7 +500,7 @@
                             <span class="db-stock-count">{{ stok_aman }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_aman total_produk 100 %}%; background: #16A34A;"></div>
+                            <div class="db-progress-fill db-fill-aman" style="--w: {% widthratio stok_aman total_produk 100 %}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -472,7 +516,7 @@
                             <span class="db-stock-count">{{ stok_menipis }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_menipis total_produk 100 %}%; background: #D97706;"></div>
+                            <div class="db-progress-fill db-fill-menipis" style="--w: {% widthratio stok_menipis total_produk 100 %}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -488,7 +532,7 @@
                             <span class="db-stock-count">{{ stok_habis }}</span>
                         </div>
                         <div class="db-progress">
-                            <div class="db-progress-fill" style="width: {% widthratio stok_habis total_produk 100 %}%; background: #DC2626;"></div>
+                            <div class="db-progress-fill db-fill-habis" style="--w: {% widthratio stok_habis total_produk 100 %}%;"></div>
                         </div>
                     </div>
                 </div>
@@ -507,7 +551,7 @@
                 {% for a in aktivitas %}
                 <div class="db-act-item">
                     <div class="db-act-dot-wrap">
-                        <div class="db-act-dot" style="background: {% if a.jenis == 'transaksi' %}#16A34A{% else %}#D97706{% endif %};"></div>
+                        <div class="db-act-dot {% if a.jenis == 'transaksi' %}db-act-dot-ok{% else %}db-act-dot-warn{% endif %}"></div>
                         <div class="db-act-line"></div>
                     </div>
                     <div style="flex:1; padding-bottom:.4rem;">
@@ -524,60 +568,260 @@
             </div>
         </div>
 
-    </div><!-- /right -->
-</div><!-- /main-grid -->
+        <!-- Penjualan Per Tahun -->
+        <div class="db-card">
+            <div class="db-card-head">
+                <div>
+                    <div class="db-card-head-title">Penjualan Per Tahun</div>
+                    <div class="db-card-head-sub">Total pendapatan tahunan</div>
+                </div>
+                <span class="db-kpi-sub {% if persen_tahun >= 0 %}up{% else %}down{% endif %}">
+                    {% if persen_tahun >= 0 %}▲{% else %}▼{% endif %} {{ persen_tahun }}%
+                </span>
+            </div>
+            <div class="db-card-body">
+                <div class="db-chart-wrap-lg">
+                    <canvas id="chartTahun"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /kolom kanan -->
+</div><!-- /db-dashboard-grid -->
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 const trenLabel = JSON.parse(document.getElementById('tren-label-data').textContent);
 const trenData  = JSON.parse(document.getElementById('tren-angka-data').textContent);
 
+const bulanLabel    = JSON.parse(document.getElementById('bulan-label-data').textContent);
+const bulanIniData  = JSON.parse(document.getElementById('bulan-ini-data').textContent);
+const bulanLaluData = JSON.parse(document.getElementById('bulan-lalu-data').textContent);
+const ringkasanTahun = JSON.parse(document.getElementById('ringkasan-tahun-data').textContent);
+
+/* Global chart defaults */
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#8A93A6';
+Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display: false }); // opt-in per chart
+
+const fmtRupiahShort = v => {
+    if (v >= 1000000) return 'Rp' + (v / 1000000).toFixed(1).replace(/\.0$/, '') + 'jt';
+    if (v >= 1000) return 'Rp' + (v / 1000).toFixed(0) + 'k';
+    return 'Rp' + v;
+};
+const fmtRupiahFull = v => 'Rp' + Number(v).toLocaleString('id-ID');
+
+const tooltipBase = {
+    backgroundColor: '#0F1C3F',
+    titleColor: 'rgba(255,255,255,.55)',
+    titleFont: { size: 11, weight: '600' },
+    bodyColor: '#fff',
+    bodyFont: { weight: '700', size: 12.5 },
+    padding: 12,
+    cornerRadius: 10,
+    boxPadding: 4,
+    usePointStyle: true,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+};
+
+const gridY = { color: 'rgba(20,30,60,0.055)', drawBorder: false };
+const gridXOff = { display: false, drawBorder: false };
+const tickCommon = { font: { size: 10.5 }, color: '#98A2B8', padding: 6 };
+
+/* ---- Tren Penjualan 7 Hari ---- */
 new Chart(document.getElementById('chartTren'), {
     type: 'line',
     data: {
         labels: trenLabel,
         datasets: [{
+            label: 'Pendapatan',
             data: trenData,
             borderColor: '#2557D6',
             backgroundColor: (ctx) => {
                 const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 150);
-                g.addColorStop(0, 'rgba(37,87,214,0.18)');
+                g.addColorStop(0, 'rgba(37,87,214,0.20)');
                 g.addColorStop(1, 'rgba(37,87,214,0)');
                 return g;
             },
             fill: true,
-            tension: 0.45,
-            pointRadius: 4,
+            cubicInterpolationMode: 'monotone',
+            tension: 0.4,
+            borderWidth: 2.5,
+            borderJoinStyle: 'round',
+            borderCapStyle: 'round',
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHitRadius: 12,
             pointBackgroundColor: '#fff',
             pointBorderColor: '#2557D6',
             pointBorderWidth: 2,
-            borderWidth: 2.5,
+            pointHoverBackgroundColor: '#2557D6',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: {
-            backgroundColor: '#0F1C3F',
-            titleColor: 'rgba(255,255,255,.6)',
-            bodyColor: '#fff',
-            bodyFont: { weight: '700', size: 13 },
-            padding: 10,
-            cornerRadius: 8,
-            callbacks: {
-                label: ctx => ' Rp' + ctx.parsed.y.toLocaleString('id-ID')
-            }
-        }},
+        animation: { duration: 700, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 14, right: 6 } },
+        plugins: {
+            legend: { display: false },
+            datalabels: { display: false },
+            tooltip: Object.assign({}, tooltipBase, { displayColors: false,
+                callbacks: { label: ctx => ' ' + fmtRupiahFull(ctx.parsed.y) } })
+        },
         scales: {
             y: {
-                display: true,
-                grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                ticks: { font: { size: 10 }, color: '#8A93A6',
-                    callback: v => 'Rp' + (v >= 1000 ? (v/1000).toFixed(0)+'k' : v) }
+                grid: gridY,
+                border: { display: false },
+                beginAtZero: true,
+                min: 0,
+                grace: '12%',
+                ticks: Object.assign({}, tickCommon, { maxTicksLimit: 5, callback: fmtRupiahShort })
             },
             x: {
-                grid: { display: false },
-                ticks: { font: { size: 10 }, color: '#8A93A6' }
+                grid: gridXOff,
+                border: { display: false },
+                ticks: tickCommon
+            }
+        }
+    }
+});
+
+/* ---- Penjualan Per Bulan (line, tahun lalu vs tahun ini) ---- */
+new Chart(document.getElementById('chartBulan'), {
+    type: 'line',
+    data: {
+        labels: bulanLabel,
+        datasets: [
+            {
+                label: String(ringkasanTahun.tahun_lalu),
+                data: bulanLaluData,
+                borderColor: '#C4D0EE',
+                backgroundColor: '#C4D0EE',
+                borderDash: [5, 4],
+                cubicInterpolationMode: 'monotone',
+                tension: 0.4,
+                borderWidth: 2,
+                borderJoinStyle: 'round',
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHitRadius: 12,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#C4D0EE',
+                pointBorderWidth: 2,
+                fill: false,
+            },
+            {
+                label: String(ringkasanTahun.tahun_ini),
+                data: bulanIniData,
+                borderColor: '#2557D6',
+                backgroundColor: (ctx) => {
+                    const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+                    g.addColorStop(0, 'rgba(37,87,214,0.18)');
+                    g.addColorStop(1, 'rgba(37,87,214,0)');
+                    return g;
+                },
+                cubicInterpolationMode: 'monotone',
+                tension: 0.4,
+                borderWidth: 2.5,
+                borderJoinStyle: 'round',
+                borderCapStyle: 'round',
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHitRadius: 12,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#2557D6',
+                pointBorderWidth: 2,
+                fill: true,
+            },
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 700, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 14, right: 6 } },
+        plugins: {
+            legend: { display: false },
+            datalabels: { display: false },
+            tooltip: Object.assign({}, tooltipBase, {
+                callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtRupiahFull(ctx.parsed.y) } })
+        },
+        scales: {
+            y: {
+                grid: gridY,
+                border: { display: false },
+                beginAtZero: true,
+                min: 0,
+                grace: '12%',
+                ticks: Object.assign({}, tickCommon, { maxTicksLimit: 5, callback: fmtRupiahShort })
+            },
+            x: {
+                grid: gridXOff,
+                border: { display: false },
+                ticks: tickCommon
+            }
+        }
+    }
+});
+
+/* ---- Penjualan Per Tahun (bar) ---- */
+new Chart(document.getElementById('chartTahun'), {
+    type: 'bar',
+    data: {
+        labels: [ringkasanTahun.tahun_lalu, ringkasanTahun.tahun_ini],
+        datasets: [{
+            data: [ringkasanTahun.total_tahun_lalu, ringkasanTahun.total_tahun_ini],
+            backgroundColor: (ctx) => {
+                const colors = ['#C4D0EE', '#2557D6'];
+                return colors[ctx.dataIndex] || '#2557D6';
+            },
+            borderRadius: { topLeft: 8, topRight: 8 },
+            borderSkipped: false,
+            maxBarThickness: 72,
+            categoryPercentage: 0.55,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 700, easing: 'easeOutQuart' },
+        plugins: {
+            legend: { display: false },
+            datalabels: {
+                display: true,
+                anchor: 'end',
+                align: 'top',
+                offset: 4,
+                color: '#5B6478',
+                font: { size: 11, weight: '700' },
+                formatter: v => fmtRupiahShort(v)
+            },
+            tooltip: Object.assign({}, tooltipBase, { displayColors: false,
+                callbacks: { label: ctx => ' ' + fmtRupiahFull(ctx.parsed.y) } })
+        },
+        layout: { padding: { top: 20 } },
+        scales: {
+            y: {
+                grid: gridY,
+                border: { display: false },
+                beginAtZero: true,
+                min: 0,
+                grace: '15%',
+                ticks: Object.assign({}, tickCommon, { maxTicksLimit: 5, callback: fmtRupiahShort })
+            },
+            x: {
+                grid: gridXOff,
+                border: { display: false },
+                ticks: Object.assign({}, tickCommon, { font: { size: 12, weight: '600' }, color: '#5B6478' })
             }
         }
     }

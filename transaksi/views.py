@@ -49,7 +49,7 @@ def buat_transaksi(request):
 
 
 @login_required
-@role_required( 'kasir')
+@role_required('kasir')
 def hapus_item(request, produk_id):
     keranjang = request.session.get('keranjang', {})
     keranjang.pop(str(produk_id), None)
@@ -99,7 +99,7 @@ def struk(request, penjualan_id):
     return render(request, 'transaksi/struk.html', {'penjualan': penjualan})
 
 @login_required
-@role_required( 'kasir')
+@role_required('admin', 'kasir')
 def riwayat_transaksi(request):
     penjualan_list = Penjualan.objects.all().order_by('-tanggal')
     return render(request, 'transaksi/riwayat_transaksi.html', {'penjualan_list': penjualan_list})

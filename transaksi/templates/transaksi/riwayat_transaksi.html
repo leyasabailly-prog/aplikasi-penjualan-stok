@@ -1,33 +1,259 @@
 {% extends 'base.html' %}
 {% block title %}Riwayat Transaksi{% endblock %}
 {% block content %}
-<h1>Riwayat Transaksi</h1>
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>No. Transaksi</th>
-            <th>Tanggal</th>
-            <th>Kasir</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for penjualan in penjualan_list %}
-        <tr>
-            <td>{{ penjualan.no_transaksi }}</td>
-            <td>{{ penjualan.tanggal }}</td>
-            <td>{{ penjualan.kasir }}</td>
-            <td>Rp{{ penjualan.total_harga }}</td>
-            <td>{{ penjualan.get_status_display }}</td>
-            <td><a href="{% url 'struk_transaksi' penjualan.id %}">Lihat Detail</a></td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6">Belum ada transaksi.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<style>
+    .rt-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.25rem;
+    }
+    .rt-subtitle {
+        color: var(--ink-soft); font-size: .82rem; margin-top: -.9rem; margin-bottom: 1.25rem;
+    }
+
+    /* ===== Toolbar ===== */
+    .rt-toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: .75rem;
+        margin-bottom: 1rem;
+    }
+    .rt-entries {
+        display: flex; align-items: center; gap: .5rem;
+        font-size: .85rem; color: var(--ink-soft);
+    }
+    .rt-entries select {
+        padding: .4rem .6rem; font-size: .85rem;
+    }
+    .rt-search {
+        position: relative;
+    }
+    .rt-search input {
+        padding: .55rem .8rem .55rem 2.1rem;
+        width: 260px;
+        max-width: 100%;
+    }
+    .rt-search i {
+        position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+        color: var(--ink-faint); font-size: .95rem; pointer-events: none;
+    }
+
+    /* ===== Badge status (pakai warna dari base.html) ===== */
+    .stamp.ok i, .stamp.danger i { font-size: .8rem; margin-right: .25rem; }
+
+    /* ===== Kolom aksi ===== */
+    .btn-detail {
+        color: var(--accent); font-size: .8rem; font-weight: 600;
+        text-decoration: none; border: 1px solid var(--accent);
+        padding: .3rem .7rem; border-radius: 6px;
+        display: inline-flex; align-items: center; gap: .3rem;
+    }
+    .btn-detail:hover { background: var(--accent-tint); text-decoration: none; }
+
+    .rt-empty-row td {
+        text-align: center; color: var(--ink-faint); padding: 2rem 1rem !important;
+    }
+
+    /* ===== Footer / pagination ===== */
+    .rt-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: .75rem;
+        margin-top: 1rem;
+    }
+    .rt-showing { color: var(--ink-soft); font-size: .82rem; }
+    .rt-pagination {
+        display: flex; align-items: center; gap: .3rem; list-style: none;
+        padding: 0; margin: 0;
+    }
+    .rt-pagination button {
+        border: 1px solid var(--line); background: var(--surface);
+        color: var(--ink-soft); font-size: .82rem; font-weight: 600;
+        min-width: 32px; height: 32px; border-radius: 7px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .rt-pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .rt-pagination button.active {
+        background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .rt-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
+    tr.rt-hidden { display: none !important; }
+</style>
+
+<div class="rt-header">
+    <h1 style="margin-bottom:0;">Riwayat Transaksi</h1>
+</div>
+<p class="rt-subtitle">Daftar seluruh transaksi penjualan yang tercatat di sistem.</p>
+
+<div class="card-surface">
+    <div class="rt-toolbar">
+        <div class="rt-entries">
+            Tampilkan
+            <select id="rtEntriesPerPage">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            entri
+        </div>
+        <div class="rt-search">
+            <i class="ti ti-search"></i>
+            <input type="text" id="rtSearchInput" placeholder="Cari no. transaksi / kasir...">
+        </div>
+    </div>
+
+    <table border="0" cellpadding="0" cellspacing="0" id="rtTable">
+        <thead>
+            <tr>
+                <th>No. Transaksi</th>
+                <th>Tanggal</th>
+                <th>Kasir</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="rtTableBody">
+            {% for penjualan in penjualan_list %}
+            <tr class="rt-row"
+                data-search="{{ penjualan.no_transaksi|lower }} {{ penjualan.kasir.username|default:''|lower }}">
+                <td>{{ penjualan.no_transaksi }}</td>
+                <td>{{ penjualan.tanggal|date:"d M Y, H:i" }}</td>
+                <td>{{ penjualan.kasir.username|default:"-" }}</td>
+                <td data-value="{{ penjualan.total_harga }}">Rp{{ penjualan.total_harga }}</td>
+                <td>
+                    {% if penjualan.status == 'selesai' %}
+                        <span class="stamp ok"><i class="ti ti-circle-check"></i>{{ penjualan.get_status_display }}</span>
+                    {% else %}
+                        <span class="stamp danger"><i class="ti ti-circle-x"></i>{{ penjualan.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'struk_transaksi' penjualan.id %}" class="btn-detail">
+                        <i class="ti ti-receipt"></i>Lihat Detail
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="rt-empty-row">Belum ada transaksi.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="rt-footer" id="rtFooter">
+        <div class="rt-showing" id="rtShowingText"></div>
+        <ul class="rt-pagination" id="rtPagination"></ul>
+    </div>
+</div>
+
+<script>
+(function () {
+    const tbody = document.getElementById('rtTableBody');
+    const allRows = Array.from(tbody.querySelectorAll('tr.rt-row'));
+    const searchInput = document.getElementById('rtSearchInput');
+    const entriesSelect = document.getElementById('rtEntriesPerPage');
+    const showingText = document.getElementById('rtShowingText');
+    const pagination = document.getElementById('rtPagination');
+    const footer = document.getElementById('rtFooter');
+
+    // Format kolom total jadi Rp dengan pemisah ribuan
+    allRows.forEach(function (row) {
+        const totalCell = row.querySelector('td[data-value]');
+        if (totalCell) {
+            const value = parseFloat(totalCell.getAttribute('data-value')) || 0;
+            totalCell.textContent = 'Rp' + value.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+        }
+    });
+
+    if (allRows.length === 0) {
+        footer.style.display = 'none';
+        return;
+    }
+
+    let currentPage = 1;
+    let perPage = parseInt(entriesSelect.value, 10);
+
+    function getFilteredRows() {
+        const keyword = searchInput.value.trim().toLowerCase();
+        if (!keyword) return allRows;
+        return allRows.filter(function (row) {
+            return row.getAttribute('data-search').includes(keyword);
+        });
+    }
+
+    function render() {
+        const filtered = getFilteredRows();
+        const totalRows = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / perPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        // Sembunyikan semua baris dulu
+        allRows.forEach(function (row) { row.classList.add('rt-hidden'); });
+
+        const start = (currentPage - 1) * perPage;
+        const end = start + perPage;
+        const pageRows = filtered.slice(start, end);
+        pageRows.forEach(function (row) { row.classList.remove('rt-hidden'); });
+
+        // Tampilkan pesan "tidak ditemukan" bila hasil pencarian kosong
+        let noResultRow = tbody.querySelector('.rt-no-result');
+        if (totalRows === 0) {
+            if (!noResultRow) {
+                noResultRow = document.createElement('tr');
+                noResultRow.className = 'rt-no-result';
+                noResultRow.innerHTML = '<td colspan="6" class="rt-empty-row">Transaksi tidak ditemukan.</td>';
+                tbody.appendChild(noResultRow);
+            }
+        } else if (noResultRow) {
+            noResultRow.remove();
+        }
+
+        // Teks "menampilkan X-Y dari Z entri"
+        if (totalRows === 0) {
+            showingText.textContent = 'Tidak ada data yang ditampilkan';
+        } else {
+            showingText.textContent =
+                'Menampilkan ' + (start + 1) + '-' + Math.min(end, totalRows) + ' dari ' + totalRows + ' entri';
+        }
+
+        // Render tombol pagination
+        pagination.innerHTML = '';
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '<i class="ti ti-chevron-left"></i>';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', function () { currentPage--; render(); });
+        pagination.appendChild(prevBtn);
+
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        startPage = Math.max(1, endPage - maxButtons + 1);
+
+        for (let p = startPage; p <= endPage; p++) {
+            const btn = document.createElement('button');
+            btn.textContent = p;
+            if (p === currentPage) btn.classList.add('active');
+            btn.addEventListener('click', function () { currentPage = p; render(); });
+            pagination.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '<i class="ti ti-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', function () { currentPage++; render(); });
+        pagination.appendChild(nextBtn);
+    }
+
+    searchInput.addEventListener('input', function () { currentPage = 1; render(); });
+    entriesSelect.addEventListener('change', function () {
+        perPage = parseInt(entriesSelect.value, 10);
+        currentPage = 1;
+        render();
+    });
+
+    render();
+})();
+</script>
 {% endblock %}
