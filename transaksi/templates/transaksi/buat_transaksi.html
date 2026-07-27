@@ -1,328 +1,336 @@
 {% extends 'base.html' %}
-{% block title %}Stok Masuk{% endblock %}
+{% block title %}Buat Transaksi{% endblock %}
 {% block content %}
+<h1>Buat Transaksi Penjualan</h1>
+
 <style>
-    /* ===== Modal Tambah Stok Masuk ===== */
-    .modal-overlay {
-        display: none; position: fixed; inset: 0; background: rgba(30,24,18,0.45);
-        align-items: center; justify-content: center; z-index: 999;
-        padding: 1rem;
+    .pos-layout {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
     }
-    .modal-overlay.show { display: flex; }
-    .modal-card {
-        background: #fff; border-radius: 16px; padding: 1.75rem 1.75rem 1.5rem;
-        max-width: 480px; width: 100%;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        border-top: 4px solid var(--accent);
-        max-height: 90vh; overflow-y: auto;
-    }
-    .modal-card-header {
-        display: flex; justify-content: space-between; align-items: flex-start;
-        margin-bottom: .3rem;
-    }
-    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
-    .modal-close-btn {
-        background: none; border: none; font-size: 1.2rem; line-height: 1;
-        color: var(--ink-faint); cursor: pointer; padding: .1rem .3rem;
-    }
-    .modal-close-btn:hover { color: var(--ink); }
-    .modal-desc {
-        color: var(--ink-soft); font-size: .82rem; margin: 0 0 1.25rem;
-    }
-    .sm-field { margin-bottom: 1rem; }
-    .sm-field label {
-        display: block; font-size: .72rem; font-weight: 600;
-        color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em;
-        margin-bottom: .35rem;
-    }
-    .sm-field select, .sm-field input { width: 100%; }
-    .modal-form-actions {
-        display: flex; gap: .7rem; margin-top: 1.4rem;
-    }
-    .modal-form-actions button[type="submit"] { flex: 1; }
-    .modal-form-actions .btn-secondary {
-        background: transparent; color: var(--ink-soft); border: 1px solid var(--line);
-        padding: .65rem 1.4rem; border-radius: 9px; font-weight: 600; font-size: .87rem; cursor: pointer;
-    }
+    .pos-products { flex: 1; min-width: 0; }
+    .pos-cart { width: 340px; flex-shrink: 0; }
 
-    @media (max-width: 600px) {
-        .modal-card { padding: 1.4rem 1.2rem 1.2rem; }
-        .modal-form-actions { flex-direction: column-reverse; }
-    }
-
-    .sm-section-title {
-        margin: 2rem 0 1rem;
-    }
-
-    /* ===== Toolbar (sama pola dengan Riwayat Transaksi) ===== */
-    .sm-toolbar {
-        display: flex; justify-content: space-between; align-items: center;
-        flex-wrap: wrap; gap: .75rem;
+    /* ===== Search ===== */
+    .pos-search {
+        position: relative;
         margin-bottom: 1rem;
     }
-    .sm-entries {
-        display: flex; align-items: center; gap: .5rem;
-        font-size: .85rem; color: var(--ink-soft);
+    .pos-search i {
+        position: absolute; left: .8rem; top: 50%; transform: translateY(-50%);
+        color: var(--ink-faint); font-size: 1rem;
     }
-    .sm-entries select { padding: .4rem .6rem; font-size: .85rem; }
-    .sm-search { position: relative; }
-    .sm-search input {
-        padding: .55rem .8rem .55rem 2.1rem;
-        width: 260px; max-width: 100%;
-    }
-    .sm-search i {
-        position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
-        color: var(--ink-faint); font-size: .95rem; pointer-events: none;
+    .pos-search input {
+        width: 100%;
+        padding-left: 2.3rem;
     }
 
-    .sm-jumlah-badge {
-        display: inline-block; background: var(--success-tint); color: var(--success);
-        font-size: .78rem; font-weight: 700; padding: .15rem .55rem; border-radius: 20px;
+    /* ===== Product grid ===== */
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: .85rem;
     }
-
-    .sm-empty-row td {
-        text-align: center; color: var(--ink-faint); padding: 2rem 1rem !important;
+    .product-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: .9rem;
+        cursor: pointer;
+        transition: border-color .15s ease, box-shadow .15s ease;
     }
-
-    .sm-footer {
-        display: flex; justify-content: space-between; align-items: center;
-        flex-wrap: wrap; gap: .75rem;
-        margin-top: 1rem;
+    .product-card:hover { border-color: var(--accent); }
+    .product-card.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-tint);
     }
-    .sm-showing { color: var(--ink-soft); font-size: .82rem; }
-    .sm-pagination {
-        display: flex; align-items: center; gap: .3rem; list-style: none;
-        padding: 0; margin: 0;
+    .product-card.out-of-stock {
+        opacity: .5;
+        cursor: not-allowed;
     }
-    .sm-pagination button {
-        border: 1px solid var(--line); background: var(--surface);
-        color: var(--ink-soft); font-size: .82rem; font-weight: 600;
-        min-width: 32px; height: 32px; border-radius: 7px; cursor: pointer;
+    .product-thumb {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 8px;
+        margin-bottom: .6rem;
+        overflow: hidden;
+        background: var(--accent-tint);
+    }
+    .product-thumb img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .product-icon {
+        width: 100%; height: 100%;
+        color: var(--accent);
         display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1.3rem;
     }
-    .sm-pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-    .sm-pagination button.active {
-        background: var(--accent); border-color: var(--accent); color: #fff;
+    .product-name {
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: .5rem;
+        line-height: 1.25;
+        min-height: 2.2em;
     }
-    .sm-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .product-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .35rem;
+    }
+    .product-price {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--accent-dark);
+    }
+    .product-stock {
+        display: inline-block;
+        max-width: 100%;
+        font-size: .68rem;
+        font-weight: 600;
+        color: var(--success);
+        background: var(--success-tint);
+        padding: .1rem .4rem;
+        border-radius: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        box-sizing: border-box;
+    }
+    .product-stock.low {
+        color: var(--warning);
+        background: var(--warning-tint);
+    }
+    .no-results {
+        color: var(--ink-faint);
+        font-size: .85rem;
+        padding: 1.5rem 0;
+        text-align: center;
+    }
 
-    tr.sm-hidden { display: none !important; }
+    /* ===== Cart panel ===== */
+    .cart-card {
+        position: sticky;
+        top: 1.25rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 1.1rem;
+    }
+    .cart-card h3 { font-size: .95rem; margin: 0 0 .8rem; }
+
+    .add-form select { width: 100%; margin-bottom: .6rem; }
+    .qty-row {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-bottom: .6rem;
+    }
+    .qty-btn {
+        width: 34px; height: 34px;
+        border: 1px solid var(--line);
+        background: var(--accent-tint);
+        color: var(--accent-dark);
+        border-radius: 8px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .qty-btn:hover { background: #DCE6FB; }
+    #qtyInput { flex: 1; text-align: center; }
+
+    .btn-add-cart {
+        width: 100%;
+        background: var(--accent-tint) !important;
+        color: var(--accent-dark) !important;
+        font-weight: 600;
+        border: 1px solid var(--accent-tint) !important;
+    }
+    .btn-add-cart:hover { background: #DCE6FB !important; }
+
+    .cart-items {
+        border-top: 1px solid var(--line);
+        margin-top: 1rem;
+        padding-top: .6rem;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+    .cart-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .55rem 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-name { font-size: .82rem; font-weight: 600; color: var(--ink); }
+    .cart-item-qty { font-size: .72rem; color: var(--ink-faint); }
+    .cart-item-right { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
+    .cart-item-subtotal { font-size: .82rem; font-weight: 600; color: var(--ink); white-space: nowrap; }
+    .cart-item-remove { color: var(--danger); font-size: 1rem; text-decoration: none; }
+    .cart-item-remove:hover { color: #B91C1C; }
+    .cart-empty {
+        color: var(--ink-faint);
+        font-size: .82rem;
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    .cart-total-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        border-top: 1px solid var(--line);
+        margin-top: .6rem;
+        padding-top: .8rem;
+    }
+    .cart-total-row span:first-child { font-size: .85rem; color: var(--ink-soft); font-weight: 600; }
+    .cart-total-amount { font-size: 1.25rem; font-weight: 700; color: var(--ink); }
+
+    .btn-checkout {
+        width: 100%;
+        margin-top: .8rem;
+        background: var(--success) !important;
+        font-size: .95rem;
+        padding: .75rem 1.2rem;
+    }
+    .btn-checkout:hover { background: #128A3E !important; }
+
+    @media (max-width: 900px) {
+        .pos-layout { flex-direction: column; }
+        .pos-cart { width: 100%; }
+        .cart-card { position: static; }
+    }
 </style>
 
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
-    <div>
-        <h1 style="margin-bottom:.25rem;">Stok Masuk</h1>
-        <p style="color:var(--ink-soft); font-size:.82rem; margin:0;">
-            Tambahkan stok baru dari supplier dan pantau riwayat penambahan stok.
-        </p>
-    </div>
-    <button type="button" class="btn-primary" onclick="openStokModal()">+ Tambah Stok Masuk</button>
-</div>
-
-<!-- Modal Tambah Stok Masuk -->
-<div class="modal-overlay" id="stokModal">
-    <div class="modal-card">
-        <div class="modal-card-header">
-            <span class="modal-title">Tambah Stok Masuk</span>
-            <button type="button" class="modal-close-btn" onclick="closeStokModal()">&times;</button>
+<div class="pos-layout">
+    <div class="pos-products">
+        <div class="pos-search">
+            <i class="ti ti-search"></i>
+            <input type="text" id="produkSearch" placeholder="Cari produk...">
         </div>
-        <p class="modal-desc">Stok produk yang dipilih akan otomatis bertambah setelah disimpan.</p>
 
-        <form method="post">
-            {% csrf_token %}
-            <div class="sm-field">
-                <label for="smProduk">Produk</label>
-                <select name="produk_id" id="smProduk" required>
+        <div class="product-grid" id="productGrid">
+            {% for produk in produk_list %}
+            <div class="product-card{% if produk.stok == 0 %} out-of-stock{% endif %}"
+                 data-id="{{ produk.id }}"
+                 data-nama="{{ produk.nama_produk|lower }}">
+                <div class="product-thumb">
+                    {% if produk.gambar %}
+                    <img src="{{ produk.gambar.url }}" alt="{{ produk.nama_produk }}" loading="lazy">
+                    {% else %}
+                    <div class="product-icon">{{ produk.nama_produk|slice:":1"|upper }}</div>
+                    {% endif %}
+                </div>
+                <div class="product-name">{{ produk.nama_produk }}</div>
+                <div class="product-meta">
+                    <span class="product-price">Rp{{ produk.harga_jual }}</span>
+                    <span class="product-stock{% if produk.stok <= 5 %} low{% endif %}">Stok {{ produk.stok }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="no-results" id="noResults" style="display:none;">Produk tidak ditemukan.</div>
+    </div>
+
+    <div class="pos-cart">
+        <div class="cart-card">
+            <h3>Tambah ke Keranjang</h3>
+            <form method="post" class="add-form">
+                {% csrf_token %}
+                <select name="produk_id" id="produkSelect" required>
                     <option value="">-- Pilih Produk --</option>
                     {% for produk in produk_list %}
-                    <option value="{{ produk.id }}">{{ produk.nama_produk }} (Stok saat ini: {{ produk.stok }})</option>
+                    <option value="{{ produk.id }}">{{ produk.nama_produk }} (Stok: {{ produk.stok }}) - Rp{{ produk.harga_jual }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="sm-field">
-                <label for="smJumlah">Jumlah Masuk</label>
-                <input type="number" name="jumlah" id="smJumlah" min="1" placeholder="Contoh: 20" required>
-            </div>
-            <div class="sm-field" style="margin-bottom:0;">
-                <label for="smKeterangan">Keterangan</label>
-                <input type="text" name="keterangan" id="smKeterangan" placeholder="Misal: dari supplier X">
+                <div class="qty-row">
+                    <button type="button" class="qty-btn" id="qtyMinus">&minus;</button>
+                    <input type="number" name="qty" id="qtyInput" min="1" value="1" required>
+                    <button type="button" class="qty-btn" id="qtyPlus">+</button>
+                </div>
+                <button type="submit" class="btn-add-cart">Tambah ke Keranjang</button>
+            </form>
+
+            <div class="cart-items">
+                {% for item in items %}
+                <div class="cart-item">
+                    <div>
+                        <div class="cart-item-name">{{ item.produk.nama_produk }}</div>
+                        <div class="cart-item-qty">{{ item.qty }} x Rp{{ item.produk.harga_jual }}</div>
+                    </div>
+                    <div class="cart-item-right">
+                        <span class="cart-item-subtotal">Rp{{ item.subtotal }}</span>
+                        <a href="{% url 'hapus_item_transaksi' item.produk.id %}" class="cart-item-remove" title="Hapus"><i class="ti ti-trash"></i></a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="cart-empty">Keranjang masih kosong.</div>
+                {% endfor %}
             </div>
 
-            <div class="modal-form-actions">
-                <button type="submit">Simpan Stok Masuk</button>
-                <button type="button" class="btn-secondary" onclick="closeStokModal()">Batal</button>
+            <div class="cart-total-row">
+                <span>Total</span>
+                <span class="cart-total-amount">Rp{{ total }}</span>
             </div>
-        </form>
-    </div>
-</div>
 
-<h3 class="sm-section-title">Riwayat Stok Masuk Terbaru</h3>
-
-<div class="card-surface">
-    <div class="sm-toolbar">
-        <div class="sm-entries">
-            Tampilkan
-            <select id="smEntriesPerPage">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
-            entri
+            {% if items %}
+            <form method="post" action="{% url 'checkout_transaksi' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-checkout">Selesaikan Transaksi</button>
+            </form>
+            {% endif %}
         </div>
-        <div class="sm-search">
-            <i class="ti ti-search"></i>
-            <input type="text" id="smSearchInput" placeholder="Cari produk / keterangan...">
-        </div>
-    </div>
-
-    <table border="0" cellpadding="0" cellspacing="0" id="smTable">
-        <thead>
-            <tr>
-                <th>Produk</th>
-                <th>Jumlah</th>
-                <th>Tanggal</th>
-                <th>Input Oleh</th>
-                <th>Keterangan</th>
-            </tr>
-        </thead>
-        <tbody id="smTableBody">
-            {% for r in riwayat %}
-            <tr class="sm-row"
-                data-search="{{ r.produk.nama_produk|lower }} {{ r.keterangan|default:''|lower }} {{ r.user.username|default:''|lower }}">
-                <td>{{ r.produk.nama_produk }}</td>
-                <td><span class="sm-jumlah-badge">+{{ r.jumlah }}</span></td>
-                <td>{{ r.tanggal|date:"d M Y, H:i" }}</td>
-                <td>{{ r.user.username|default:"-" }}</td>
-                <td>{{ r.keterangan|default:"-" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="sm-empty-row">Belum ada riwayat stok masuk.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="sm-footer" id="smFooter">
-        <div class="sm-showing" id="smShowingText"></div>
-        <ul class="sm-pagination" id="smPagination"></ul>
     </div>
 </div>
 
 <script>
-(function () {
-    const tbody = document.getElementById('smTableBody');
-    const allRows = Array.from(tbody.querySelectorAll('tr.sm-row'));
-    const searchInput = document.getElementById('smSearchInput');
-    const entriesSelect = document.getElementById('smEntriesPerPage');
-    const showingText = document.getElementById('smShowingText');
-    const pagination = document.getElementById('smPagination');
-    const footer = document.getElementById('smFooter');
+    const grid = document.getElementById('productGrid');
+    const select = document.getElementById('produkSelect');
+    const qtyInput = document.getElementById('qtyInput');
+    const search = document.getElementById('produkSearch');
+    const noResults = document.getElementById('noResults');
 
-    if (allRows.length === 0) {
-        footer.style.display = 'none';
-        return;
-    }
+    grid.addEventListener('click', function (e) {
+        const card = e.target.closest('.product-card');
+        if (!card || card.classList.contains('out-of-stock')) return;
 
-    let currentPage = 1;
-    let perPage = parseInt(entriesSelect.value, 10);
+        grid.querySelectorAll('.product-card.selected').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
 
-    function getFilteredRows() {
-        const keyword = searchInput.value.trim().toLowerCase();
-        if (!keyword) return allRows;
-        return allRows.filter(function (row) {
-            return row.getAttribute('data-search').includes(keyword);
-        });
-    }
-
-    function render() {
-        const filtered = getFilteredRows();
-        const totalRows = filtered.length;
-        const totalPages = Math.max(1, Math.ceil(totalRows / perPage));
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-
-        allRows.forEach(function (row) { row.classList.add('sm-hidden'); });
-
-        const start = (currentPage - 1) * perPage;
-        const end = start + perPage;
-        const pageRows = filtered.slice(start, end);
-        pageRows.forEach(function (row) { row.classList.remove('sm-hidden'); });
-
-        let noResultRow = tbody.querySelector('.sm-no-result');
-        if (totalRows === 0) {
-            if (!noResultRow) {
-                noResultRow = document.createElement('tr');
-                noResultRow.className = 'sm-no-result';
-                noResultRow.innerHTML = '<td colspan="5" class="sm-empty-row">Data tidak ditemukan.</td>';
-                tbody.appendChild(noResultRow);
-            }
-        } else if (noResultRow) {
-            noResultRow.remove();
-        }
-
-        if (totalRows === 0) {
-            showingText.textContent = 'Tidak ada data yang ditampilkan';
-        } else {
-            showingText.textContent =
-                'Menampilkan ' + (start + 1) + '-' + Math.min(end, totalRows) + ' dari ' + totalRows + ' entri';
-        }
-
-        pagination.innerHTML = '';
-        const prevBtn = document.createElement('button');
-        prevBtn.innerHTML = '<i class="ti ti-chevron-left"></i>';
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.addEventListener('click', function () { currentPage--; render(); });
-        pagination.appendChild(prevBtn);
-
-        const maxButtons = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-        startPage = Math.max(1, endPage - maxButtons + 1);
-
-        for (let p = startPage; p <= endPage; p++) {
-            const btn = document.createElement('button');
-            btn.textContent = p;
-            if (p === currentPage) btn.classList.add('active');
-            btn.addEventListener('click', function () { currentPage = p; render(); });
-            pagination.appendChild(btn);
-        }
-
-        const nextBtn = document.createElement('button');
-        nextBtn.innerHTML = '<i class="ti ti-chevron-right"></i>';
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.addEventListener('click', function () { currentPage++; render(); });
-        pagination.appendChild(nextBtn);
-    }
-
-    searchInput.addEventListener('input', function () { currentPage = 1; render(); });
-    entriesSelect.addEventListener('change', function () {
-        perPage = parseInt(entriesSelect.value, 10);
-        currentPage = 1;
-        render();
+        select.value = card.dataset.id;
+        qtyInput.focus();
+        qtyInput.select();
     });
 
-    render();
-})();
+    document.getElementById('qtyPlus').addEventListener('click', function () {
+        qtyInput.value = (parseInt(qtyInput.value) || 1) + 1;
+    });
+    document.getElementById('qtyMinus').addEventListener('click', function () {
+        qtyInput.value = Math.max(1, (parseInt(qtyInput.value) || 1) - 1);
+    });
 
-// ===== Modal Tambah Stok Masuk =====
-function openStokModal() {
-    document.getElementById('stokModal').classList.add('show');
-}
-function closeStokModal() {
-    document.getElementById('stokModal').classList.remove('show');
-}
-document.getElementById('stokModal').addEventListener('click', function (e) {
-    if (e.target === this) closeStokModal();
-});
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeStokModal();
-});
+    search.addEventListener('input', function () {
+        const term = search.value.trim().toLowerCase();
+        let visible = 0;
+        grid.querySelectorAll('.product-card').forEach(card => {
+            const match = card.dataset.nama.includes(term);
+            card.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        noResults.style.display = visible === 0 ? 'block' : 'none';
+    });
 
-{% if messages %}
-// Kalau ada notifikasi (misal error validasi setelah submit), buka lagi modalnya
-openStokModal();
-{% endif %}
+    select.addEventListener('change', function () {
+        grid.querySelectorAll('.product-card.selected').forEach(c => c.classList.remove('selected'));
+        const match = grid.querySelector(`.product-card[data-id="${select.value}"]`);
+        if (match) match.classList.add('selected');
+    });
 </script>
 {% endblock %}
