@@ -1,54 +1,328 @@
 {% extends 'base.html' %}
 {% block title %}Stok Masuk{% endblock %}
 {% block content %}
-<h1>Input Stok Masuk</h1>
+<style>
+    /* ===== Modal Tambah Stok Masuk ===== */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(30,24,18,0.45);
+        align-items: center; justify-content: center; z-index: 999;
+        padding: 1rem;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-card {
+        background: #fff; border-radius: 16px; padding: 1.75rem 1.75rem 1.5rem;
+        max-width: 480px; width: 100%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-top: 4px solid var(--accent);
+        max-height: 90vh; overflow-y: auto;
+    }
+    .modal-card-header {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        margin-bottom: .3rem;
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+    .modal-close-btn {
+        background: none; border: none; font-size: 1.2rem; line-height: 1;
+        color: var(--ink-faint); cursor: pointer; padding: .1rem .3rem;
+    }
+    .modal-close-btn:hover { color: var(--ink); }
+    .modal-desc {
+        color: var(--ink-soft); font-size: .82rem; margin: 0 0 1.25rem;
+    }
+    .sm-field { margin-bottom: 1rem; }
+    .sm-field label {
+        display: block; font-size: .72rem; font-weight: 600;
+        color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em;
+        margin-bottom: .35rem;
+    }
+    .sm-field select, .sm-field input { width: 100%; }
+    .modal-form-actions {
+        display: flex; gap: .7rem; margin-top: 1.4rem;
+    }
+    .modal-form-actions button[type="submit"] { flex: 1; }
+    .modal-form-actions .btn-secondary {
+        background: transparent; color: var(--ink-soft); border: 1px solid var(--line);
+        padding: .65rem 1.4rem; border-radius: 9px; font-weight: 600; font-size: .87rem; cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+        .modal-card { padding: 1.4rem 1.2rem 1.2rem; }
+        .modal-form-actions { flex-direction: column-reverse; }
+    }
+
+    .sm-section-title {
+        margin: 2rem 0 1rem;
+    }
+
+    /* ===== Toolbar (sama pola dengan Riwayat Transaksi) ===== */
+    .sm-toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: .75rem;
+        margin-bottom: 1rem;
+    }
+    .sm-entries {
+        display: flex; align-items: center; gap: .5rem;
+        font-size: .85rem; color: var(--ink-soft);
+    }
+    .sm-entries select { padding: .4rem .6rem; font-size: .85rem; }
+    .sm-search { position: relative; }
+    .sm-search input {
+        padding: .55rem .8rem .55rem 2.1rem;
+        width: 260px; max-width: 100%;
+    }
+    .sm-search i {
+        position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+        color: var(--ink-faint); font-size: .95rem; pointer-events: none;
+    }
+
+    .sm-jumlah-badge {
+        display: inline-block; background: var(--success-tint); color: var(--success);
+        font-size: .78rem; font-weight: 700; padding: .15rem .55rem; border-radius: 20px;
+    }
+
+    .sm-empty-row td {
+        text-align: center; color: var(--ink-faint); padding: 2rem 1rem !important;
+    }
+
+    .sm-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: .75rem;
+        margin-top: 1rem;
+    }
+    .sm-showing { color: var(--ink-soft); font-size: .82rem; }
+    .sm-pagination {
+        display: flex; align-items: center; gap: .3rem; list-style: none;
+        padding: 0; margin: 0;
+    }
+    .sm-pagination button {
+        border: 1px solid var(--line); background: var(--surface);
+        color: var(--ink-soft); font-size: .82rem; font-weight: 600;
+        min-width: 32px; height: 32px; border-radius: 7px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .sm-pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .sm-pagination button.active {
+        background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .sm-pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
+    tr.sm-hidden { display: none !important; }
+</style>
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
+    <div>
+        <h1 style="margin-bottom:.25rem;">Stok Masuk</h1>
+        <p style="color:var(--ink-soft); font-size:.82rem; margin:0;">
+            Tambahkan stok baru dari supplier dan pantau riwayat penambahan stok.
+        </p>
+    </div>
+    <button type="button" class="btn-primary" onclick="openStokModal()">+ Tambah Stok Masuk</button>
+</div>
+
+<!-- Modal Tambah Stok Masuk -->
+<div class="modal-overlay" id="stokModal">
+    <div class="modal-card">
+        <div class="modal-card-header">
+            <span class="modal-title">Tambah Stok Masuk</span>
+            <button type="button" class="modal-close-btn" onclick="closeStokModal()">&times;</button>
+        </div>
+        <p class="modal-desc">Stok produk yang dipilih akan otomatis bertambah setelah disimpan.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="sm-field">
+                <label for="smProduk">Produk</label>
+                <select name="produk_id" id="smProduk" required>
+                    <option value="">-- Pilih Produk --</option>
+                    {% for produk in produk_list %}
+                    <option value="{{ produk.id }}">{{ produk.nama_produk }} (Stok saat ini: {{ produk.stok }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm-field">
+                <label for="smJumlah">Jumlah Masuk</label>
+                <input type="number" name="jumlah" id="smJumlah" min="1" placeholder="Contoh: 20" required>
+            </div>
+            <div class="sm-field" style="margin-bottom:0;">
+                <label for="smKeterangan">Keterangan</label>
+                <input type="text" name="keterangan" id="smKeterangan" placeholder="Misal: dari supplier X">
+            </div>
+
+            <div class="modal-form-actions">
+                <button type="submit">Simpan Stok Masuk</button>
+                <button type="button" class="btn-secondary" onclick="closeStokModal()">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<h3 class="sm-section-title">Riwayat Stok Masuk Terbaru</h3>
+
+<div class="card-surface">
+    <div class="sm-toolbar">
+        <div class="sm-entries">
+            Tampilkan
+            <select id="smEntriesPerPage">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+            entri
+        </div>
+        <div class="sm-search">
+            <i class="ti ti-search"></i>
+            <input type="text" id="smSearchInput" placeholder="Cari produk / keterangan...">
+        </div>
+    </div>
+
+    <table border="0" cellpadding="0" cellspacing="0" id="smTable">
+        <thead>
+            <tr>
+                <th>Produk</th>
+                <th>Jumlah</th>
+                <th>Tanggal</th>
+                <th>Input Oleh</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody id="smTableBody">
+            {% for r in riwayat %}
+            <tr class="sm-row"
+                data-search="{{ r.produk.nama_produk|lower }} {{ r.keterangan|default:''|lower }} {{ r.user.username|default:''|lower }}">
+                <td>{{ r.produk.nama_produk }}</td>
+                <td><span class="sm-jumlah-badge">+{{ r.jumlah }}</span></td>
+                <td>{{ r.tanggal|date:"d M Y, H:i" }}</td>
+                <td>{{ r.user.username|default:"-" }}</td>
+                <td>{{ r.keterangan|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="sm-empty-row">Belum ada riwayat stok masuk.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="sm-footer" id="smFooter">
+        <div class="sm-showing" id="smShowingText"></div>
+        <ul class="sm-pagination" id="smPagination"></ul>
+    </div>
+</div>
+
+<script>
+(function () {
+    const tbody = document.getElementById('smTableBody');
+    const allRows = Array.from(tbody.querySelectorAll('tr.sm-row'));
+    const searchInput = document.getElementById('smSearchInput');
+    const entriesSelect = document.getElementById('smEntriesPerPage');
+    const showingText = document.getElementById('smShowingText');
+    const pagination = document.getElementById('smPagination');
+    const footer = document.getElementById('smFooter');
+
+    if (allRows.length === 0) {
+        footer.style.display = 'none';
+        return;
+    }
+
+    let currentPage = 1;
+    let perPage = parseInt(entriesSelect.value, 10);
+
+    function getFilteredRows() {
+        const keyword = searchInput.value.trim().toLowerCase();
+        if (!keyword) return allRows;
+        return allRows.filter(function (row) {
+            return row.getAttribute('data-search').includes(keyword);
+        });
+    }
+
+    function render() {
+        const filtered = getFilteredRows();
+        const totalRows = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / perPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        allRows.forEach(function (row) { row.classList.add('sm-hidden'); });
+
+        const start = (currentPage - 1) * perPage;
+        const end = start + perPage;
+        const pageRows = filtered.slice(start, end);
+        pageRows.forEach(function (row) { row.classList.remove('sm-hidden'); });
+
+        let noResultRow = tbody.querySelector('.sm-no-result');
+        if (totalRows === 0) {
+            if (!noResultRow) {
+                noResultRow = document.createElement('tr');
+                noResultRow.className = 'sm-no-result';
+                noResultRow.innerHTML = '<td colspan="5" class="sm-empty-row">Data tidak ditemukan.</td>';
+                tbody.appendChild(noResultRow);
+            }
+        } else if (noResultRow) {
+            noResultRow.remove();
+        }
+
+        if (totalRows === 0) {
+            showingText.textContent = 'Tidak ada data yang ditampilkan';
+        } else {
+            showingText.textContent =
+                'Menampilkan ' + (start + 1) + '-' + Math.min(end, totalRows) + ' dari ' + totalRows + ' entri';
+        }
+
+        pagination.innerHTML = '';
+        const prevBtn = document.createElement('button');
+        prevBtn.innerHTML = '<i class="ti ti-chevron-left"></i>';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', function () { currentPage--; render(); });
+        pagination.appendChild(prevBtn);
+
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        startPage = Math.max(1, endPage - maxButtons + 1);
+
+        for (let p = startPage; p <= endPage; p++) {
+            const btn = document.createElement('button');
+            btn.textContent = p;
+            if (p === currentPage) btn.classList.add('active');
+            btn.addEventListener('click', function () { currentPage = p; render(); });
+            pagination.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerHTML = '<i class="ti ti-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', function () { currentPage++; render(); });
+        pagination.appendChild(nextBtn);
+    }
+
+    searchInput.addEventListener('input', function () { currentPage = 1; render(); });
+    entriesSelect.addEventListener('change', function () {
+        perPage = parseInt(entriesSelect.value, 10);
+        currentPage = 1;
+        render();
+    });
+
+    render();
+})();
+
+// ===== Modal Tambah Stok Masuk =====
+function openStokModal() {
+    document.getElementById('stokModal').classList.add('show');
+}
+function closeStokModal() {
+    document.getElementById('stokModal').classList.remove('show');
+}
+document.getElementById('stokModal').addEventListener('click', function (e) {
+    if (e.target === this) closeStokModal();
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeStokModal();
+});
 
 {% if messages %}
-<ul>
-    {% for message in messages %}
-    <li>{{ message }}</li>
-    {% endfor %}
-</ul>
+// Kalau ada notifikasi (misal error validasi setelah submit), buka lagi modalnya
+openStokModal();
 {% endif %}
-
-<form method="post">
-    {% csrf_token %}
-    <select name="produk_id" required>
-        <option value="">-- Pilih Produk --</option>
-        {% for produk in produk_list %}
-        <option value="{{ produk.id }}">{{ produk.nama_produk }} (Stok saat ini: {{ produk.stok }})</option>
-        {% endfor %}
-    </select>
-    <input type="number" name="jumlah" min="1" placeholder="Jumlah masuk" required>
-    <input type="text" name="keterangan" placeholder="Keterangan (misal: dari supplier X)">
-    <button type="submit">Tambah Stok</button>
-</form>
-
-<h3>Riwayat Stok Masuk Terbaru</h3>
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Produk</th>
-            <th>Jumlah</th>
-            <th>Tanggal</th>
-            <th>Input Oleh</th>
-            <th>Keterangan</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for r in riwayat %}
-        <tr>
-            <td>{{ r.produk.nama_produk }}</td>
-            <td>+{{ r.jumlah }}</td>
-            <td>{{ r.tanggal }}</td>
-            <td>{{ r.user }}</td>
-            <td>{{ r.keterangan }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="5">Belum ada riwayat stok masuk.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+</script>
 {% endblock %}
