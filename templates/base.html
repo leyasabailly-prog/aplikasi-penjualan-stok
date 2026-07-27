@@ -56,13 +56,15 @@
             padding: 1.4rem 1rem;
             display: flex;
             flex-direction: column;
-            position: relative;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow: hidden;
         }
-        .sidebar-top-row { display: flex; align-items: center; justify-content: flex-start; gap: .6rem; }
-        .sidebar-toggle {
-            display: none;
-            background: transparent; border: none; color: #fff;
-            font-size: 1.3rem; cursor: pointer; padding: .3rem .4rem;
+        .sidebar-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
         }
         .sidebar-brand {
             font-family: 'Inter', sans-serif;
@@ -112,7 +114,8 @@
         .nav-list a.active { background: var(--accent); color: #fff; font-weight: 600; }
 
         .sidebar-user {
-            margin-top: auto;
+            flex-shrink: 0;
+            margin-top: .75rem;
             background: rgba(255,255,255,0.05);
             border-radius: 10px;
             padding: .65rem;
@@ -151,16 +154,8 @@
         .stamp.danger { color: var(--danger); background: var(--danger-tint); }
 
         /* ===== Tabel ===== */
-        .table-scroll {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: var(--radius);
-            box-shadow: inset -12px 0 10px -10px rgba(0,0,0,0.15);
-        }
         table {
             width: 100%;
-            min-width: 560px;
             border-collapse: collapse;
             background: var(--surface);
             border-radius: var(--radius);
@@ -249,22 +244,13 @@
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
             .app-shell { flex-direction: column; }
-            .sidebar { width: 100%; padding: .8rem .9rem; }
+            .sidebar { width: 100%; height: auto; position: static; overflow: visible; flex-direction: row; align-items: center; padding: .7rem .9rem; }
+            .sidebar-scroll { display: flex; align-items: center; overflow-x: auto; overflow-y: visible; flex: 1 1 auto; }
+            .sidebar-brand { flex-shrink: 0; }
             .sidebar-sub, .nav-label { display: none; }
-            .sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
-            .sidebar-panel {
-                display: none;
-                position: absolute;
-                top: 100%; left: 0; right: 0;
-                background: var(--sidebar-bg);
-                padding: .5rem .9rem 1rem;
-                z-index: 50;
-                box-shadow: 0 12px 20px rgba(0,0,0,0.25);
-            }
-            .sidebar-panel.open { display: block; }
-            .nav-list { display: flex; flex-direction: column; gap: .15rem; margin: .4rem 0 0; }
+            .nav-list { display: flex; margin-left: 1rem; }
             .nav-list a { white-space: nowrap; }
-            .sidebar-user { margin-top: .8rem; margin-left: 0; }
+            .sidebar-user { margin-top: 0; margin-left: .75rem; flex-shrink: 0; }
             .main-area { padding: 1.1rem 1rem 2rem; }
         }
     </style>
@@ -273,15 +259,10 @@
 <div class="app-shell">
     {% if user.is_authenticated %}
     <aside class="sidebar">
-        <div class="sidebar-top-row">
-            <button type="button" class="sidebar-toggle" onclick="document.getElementById('sidebarPanel').classList.toggle('open')" aria-label="Buka menu">
-                <i class="ti ti-menu-2"></i>
-            </button>
-            <a class="sidebar-brand" href="{% url 'dashboard' %}"><span class="mark">TK</span>Toko Kita</a>
-        </div>
+        <a class="sidebar-brand" href="{% url 'dashboard' %}"><span class="mark">TK</span>Toko Kita</a>
         <div class="sidebar-sub">Retail Ops</div>
 
-        <div class="sidebar-panel" id="sidebarPanel">
+        <div class="sidebar-scroll">
             <div class="nav-label">Menu</div>
             <ul class="nav-list">
                 {% if user.is_superuser or user.profile.role == 'admin' or user.profile.role == 'gudang' %}
@@ -296,15 +277,15 @@
                 {% endif %}
                 <li><a href="{% url 'form_stok_masuk' %}"><i class="ti ti-package-import"></i>Stok Masuk</a></li>
             </ul>
+        </div>
 
-            <div class="sidebar-user">
-                <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
-                <div class="who">
-                    <div class="name">{{ user.username }}</div>
-                    <div class="role">{% if user.profile.role %}{{ user.profile.get_role_display }}{% else %}Pengguna{% endif %}</div>
-                </div>
-                <a class="logout-btn" href="{% url 'logout' %}" title="Logout"><i class="ti ti-logout"></i></a>
+        <div class="sidebar-user">
+            <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
+            <div class="who">
+                <div class="name">{{ user.username }}</div>
+                <div class="role">{% if user.profile.role %}{{ user.profile.get_role_display }}{% else %}Pengguna{% endif %}</div>
             </div>
+            <a class="logout-btn" href="{% url 'logout' %}" title="Logout"><i class="ti ti-logout"></i></a>
         </div>
     </aside>
     {% endif %}
