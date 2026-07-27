@@ -2,31 +2,137 @@
 {% block title %}Daftar Produk{% endblock %}
 {% block content %}
 <style>
+    .toolbar-primary {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.1rem;
+    }
     .btn-primary {
         background: var(--accent); color: #fff; border: none; padding: .6rem 1.2rem;
         border-radius: 8px; font-weight: 600; font-size: .85rem; cursor: pointer;
+        text-decoration: none; display: inline-flex; align-items: center; gap: .4rem;
     }
-    .btn-edit {
-        color: var(--accent); font-size: .8rem; font-weight: 600;
-        text-decoration: none; border: 1px solid var(--accent);
-        padding: .3rem .7rem; border-radius: 6px;
+
+    /* ===== Card wrapper ===== */
+    .produk-card {
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: var(--radius);
     }
-    .btn-toggle-off, .btn-toggle-on {
-        font-size: .8rem; font-weight: 600; text-decoration: none;
-        border-width: 1px; border-style: solid; padding: .3rem .7rem; border-radius: 6px;
-        margin-left: .4rem; cursor: pointer; background: #fff;
+
+    /* ===== Toolbar (entries + search) ===== */
+    .produk-toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 1rem; flex-wrap: wrap;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid var(--line);
+        border-radius: var(--radius) var(--radius) 0 0;
     }
-    .btn-toggle-off { color: var(--danger); border-color: var(--danger); }
-    .btn-toggle-on { color: var(--success); border-color: var(--success); }
-    .badge-aktif {
-        background: rgba(76,175,80,0.12); color: var(--success);
-        font-size: .72rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px;
+    .entries-control {
+        display: flex; align-items: center; gap: .5rem;
+        font-size: .82rem; color: var(--ink-soft);
     }
-    .badge-nonaktif {
-        background: rgba(244,67,54,0.1); color: var(--danger);
-        font-size: .72rem; font-weight: 600; padding: .2rem .6rem; border-radius: 20px;
+    .entries-control select {
+        padding: .35rem .55rem !important; font-size: .82rem !important;
     }
+    .search-control {
+        display: flex; align-items: center; gap: .5rem;
+        font-size: .82rem; color: var(--ink-soft);
+    }
+    .search-control input {
+        padding: .4rem .7rem !important; font-size: .82rem !important; min-width: 220px;
+    }
+
+    /* ===== Table ===== */
+    .produk-card table { border: none; border-radius: 0; table-layout: fixed; width: 100%; }
+    .produk-card table th, .produk-card table td { vertical-align: middle; padding: .85rem 1rem; }
+
+    /* Kolom & alignment: harus konsisten antara header (th) dan isi (td) */
+    .produk-card table th:nth-child(1),
+    .produk-card table td:nth-child(1) { width: 4%; text-align: center; }
+
+    .produk-card table th:nth-child(2),
+    .produk-card table td:nth-child(2) { width: 9%; text-align: center; }
+
+    .produk-card table th:nth-child(3),
+    .produk-card table td:nth-child(3) { width: 12%; text-align: left; }
+
+    .produk-card table th:nth-child(4),
+    .produk-card table td:nth-child(4) { width: 22%; text-align: left; }
+
+    .produk-card table th:nth-child(5),
+    .produk-card table td:nth-child(5) { width: 14%; text-align: left; }
+
+    .produk-card table th:nth-child(6),
+    .produk-card table td:nth-child(6) { width: 13%; text-align: right; }
+
+    .produk-card table th:nth-child(7),
+    .produk-card table td:nth-child(7) { width: 8%; text-align: center; }
+
+    .produk-card table th:nth-child(8),
+    .produk-card table td:nth-child(8) { width: 10%; text-align: center; }
+
+    .produk-card table th:nth-child(9),
+    .produk-card table td:nth-child(9) { width: 8%; text-align: center; }
+
+    .col-aksi { text-align: center !important; }
+
+    .stamp {
+        display: inline-block; border-radius: 20px; padding: .2rem .6rem;
+        font-size: .72rem; font-weight: 600;
+    }
+    .stamp.ok { color: var(--success); background: var(--success-tint); }
+    .stamp.danger { color: var(--danger); background: var(--danger-tint); }
     tr.row-nonaktif { opacity: .55; }
+
+    .thumb {
+        width: 42px; height: 42px; border-radius: 8px; object-fit: cover;
+        border: 1px solid var(--line); display: block; margin: 0 auto;
+    }
+    .thumb-empty {
+        width: 42px; height: 42px; border-radius: 8px; background: #EEF1F6;
+        margin: 0 auto;
+    }
+
+    /* ===== Action dropdown (floating, di luar tabel) ===== */
+    .action-btn {
+        background: transparent; border: 1px solid var(--line); border-radius: 8px;
+        width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+        cursor: pointer; color: var(--ink-soft); font-size: 1rem;
+    }
+    .action-btn:hover { background: #FAFBFD; }
+    .action-menu {
+        display: none; position: fixed; left: 0; top: 0;
+        background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(20,30,60,0.18); min-width: 150px; z-index: 200;
+        overflow: hidden;
+    }
+    .action-menu.show { display: block; }
+    .action-menu a, .action-menu button {
+        display: flex; align-items: center; gap: .5rem; width: 100%;
+        padding: .55rem .8rem; font-size: .82rem; font-weight: 500;
+        border: none; background: none; text-align: left; cursor: pointer;
+        color: var(--ink); text-decoration: none;
+    }
+    .action-menu a:hover, .action-menu button:hover { background: #FAFBFD; text-decoration: none; }
+    .action-menu button.danger-text { color: var(--danger); }
+    .action-menu button.success-text { color: var(--success); }
+
+    /* ===== Footer / pagination ===== */
+    .produk-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1rem 1.2rem; flex-wrap: wrap; gap: .6rem;
+        border-radius: 0 0 var(--radius) var(--radius);
+    }
+    .footer-info { font-size: .8rem; color: var(--ink-faint); }
+    .pagination { display: flex; gap: .3rem; list-style: none; padding: 0; margin: 0; }
+    .pagination button {
+        min-width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line);
+        background: var(--surface); color: var(--ink-soft); font-size: .8rem; font-weight: 600;
+        cursor: pointer;
+    }
+    .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
+    .empty-state { text-align: center; padding: 2.2rem 0; color: var(--ink-faint); font-size: .85rem; }
 
     /* Modal */
     .modal-overlay {
@@ -64,62 +170,102 @@
     }
 </style>
 
-<div style="display:flex; justify-content:space-between; align-items:center;">
+<div class="toolbar-primary">
     <h1>Daftar Produk</h1>
-    <a href="{% url 'tambah_produk' %}" class="btn-primary" style="text-decoration:none;">+ Tambah Produk</a>
+    <a href="{% url 'tambah_produk' %}" class="btn-primary"><i class="ti ti-plus"></i>Tambah Produk</a>
 </div>
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Kode</th>
-            <th>Nama Produk</th>
-            <th>Kategori</th>
-            <th>Harga Jual</th>
-            <th>Stok</th>
-            <th>Status</th>
-            <th>Aksi</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for produk in produk_list %}
-        <tr class="{% if not produk.is_active %}row-nonaktif{% endif %}">
-            <td>{{ produk.kode_produk }}</td>
-            <td>{{ produk.nama_produk }}</td>
-            <td>{{ produk.kategori }}</td>
-            <td>{{ produk.harga_jual }}</td>
-            <td>{{ produk.stok }}</td>
-            <td>
-                {% if produk.is_active %}
-                    <span class="badge-aktif">Aktif</span>
-                {% else %}
-                    <span class="badge-nonaktif">Nonaktif</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="{% url 'edit_produk' produk.id %}" class="btn-edit">Edit</a>
-                {% if produk.is_active %}
-                    <button type="button"
-                        class="btn-toggle-off"
-                        onclick="openToggleModal('{{ produk.id }}', '{{ produk.nama_produk|escapejs }}', '{{ produk.kode_produk|escapejs }}', true)">
-                        Nonaktifkan
+<div class="produk-card">
+
+    <div class="produk-toolbar">
+        <div class="entries-control">
+            Tampilkan
+            <select id="entriesSelect">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="9999">Semua</option>
+            </select>
+            entri
+        </div>
+        <div class="search-control">
+            Cari:
+            <input type="text" id="searchInput" placeholder="Nama atau kode produk...">
+        </div>
+    </div>
+
+    <table id="produkTable">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="checkAll"></th>
+                <th class="col-gambar">Gambar</th>
+                <th>Kode</th>
+                <th>Nama Produk</th>
+                <th>Kategori</th>
+                <th>Harga Jual</th>
+                <th>Stok</th>
+                <th>Status</th>
+                <th class="col-aksi">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produk in produk_list %}
+            <tr class="produk-row {% if not produk.is_active %}row-nonaktif{% endif %}"
+                data-search="{{ produk.nama_produk|lower }} {{ produk.kode_produk|lower }}">
+                <td><input type="checkbox" class="row-check"></td>
+                <td>
+                    {% if produk.gambar %}
+                        <img class="thumb" src="{{ produk.gambar.url }}" alt="{{ produk.nama_produk }}">
+                    {% else %}
+                        <div class="thumb-empty"></div>
+                    {% endif %}
+                </td>
+                <td>{{ produk.kode_produk }}</td>
+                <td>{{ produk.nama_produk }}</td>
+                <td>{{ produk.kategori|default:"-" }}</td>
+                <td>{{ produk.harga_jual }}</td>
+                <td>{{ produk.stok }}</td>
+                <td>
+                    {% if produk.is_active %}
+                        <span class="stamp ok">Aktif</span>
+                    {% else %}
+                        <span class="stamp danger">Nonaktif</span>
+                    {% endif %}
+                </td>
+                <td class="col-aksi">
+                    <button type="button" class="action-btn"
+                        data-id="{{ produk.id }}"
+                        data-nama="{{ produk.nama_produk|escapejs }}"
+                        data-kode="{{ produk.kode_produk|escapejs }}"
+                        data-active="{% if produk.is_active %}1{% else %}0{% endif %}"
+                        data-edit-url="{% url 'edit_produk' produk.id %}"
+                        onclick="toggleActionMenu(this)">
+                        <i class="ti ti-dots-vertical"></i>
                     </button>
-                {% else %}
-                    <button type="button"
-                        class="btn-toggle-on"
-                        onclick="openToggleModal('{{ produk.id }}', '{{ produk.nama_produk|escapejs }}', '{{ produk.kode_produk|escapejs }}', false)">
-                        Aktifkan
-                    </button>
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="7">Belum ada produk.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">Belum ada produk.</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="produk-footer">
+        <div class="footer-info" id="footerInfo"></div>
+        <ul class="pagination" id="paginationList"></ul>
+    </div>
+
+</div>
+
+<!-- Shared floating action menu (di luar tabel, posisi fixed lewat JS) -->
+<div class="action-menu" id="sharedActionMenu">
+    <a href="#" id="menuEditLink"><i class="ti ti-edit"></i>Edit</a>
+    <button type="button" id="menuToggleBtn"></button>
+</div>
 
 <!-- Modal -->
 <div class="modal-overlay" id="toggleModal">
@@ -137,6 +283,7 @@
 </div>
 
 <script>
+    /* ===== Status toggle modal (existing) ===== */
     function openToggleModal(produkId, nama, kode, isActive) {
         const overlay = document.getElementById('toggleModal');
         const icon = document.getElementById('modalIcon');
@@ -168,6 +315,7 @@
         }
 
         overlay.classList.add('show');
+        closeAllActionMenus();
     }
 
     function closeToggleModal() {
@@ -177,6 +325,129 @@
     document.getElementById('toggleModal').addEventListener('click', function (e) {
         if (e.target === this) closeToggleModal();
     });
+
+    /* ===== Action dropdown (floating, shared) ===== */
+    const sharedMenu = document.getElementById('sharedActionMenu');
+    const menuEditLink = document.getElementById('menuEditLink');
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+
+    function toggleActionMenu(btn) {
+        const isOpen = sharedMenu.classList.contains('show') && sharedMenu.dataset.openFor === btn.dataset.id;
+        closeAllActionMenus();
+        if (isOpen) return;
+
+        // Isi konten menu sesuai baris yang diklik
+        menuEditLink.href = btn.dataset.editUrl;
+        const isActive = btn.dataset.active === '1';
+        menuToggleBtn.className = isActive ? 'danger-text' : 'success-text';
+        menuToggleBtn.innerHTML = isActive
+            ? '<i class="ti ti-ban"></i>Nonaktifkan'
+            : '<i class="ti ti-check"></i>Aktifkan';
+        menuToggleBtn.onclick = function () {
+            openToggleModal(btn.dataset.id, btn.dataset.nama, btn.dataset.kode, isActive);
+        };
+
+        // Posisikan menu tepat di bawah tombol yang diklik (fixed, jadi nggak kepotong tabel)
+        const rect = btn.getBoundingClientRect();
+        sharedMenu.style.display = 'block'; // biar bisa dihitung lebarnya dulu
+        const menuWidth = sharedMenu.offsetWidth;
+        let left = rect.right - menuWidth;
+        if (left < 8) left = 8;
+        let top = rect.bottom + 4;
+        // Kalau ketutup bawah layar, buka ke atas tombol
+        if (top + sharedMenu.offsetHeight > window.innerHeight - 8) {
+            top = rect.top - sharedMenu.offsetHeight - 4;
+        }
+        sharedMenu.style.left = left + 'px';
+        sharedMenu.style.top = top + 'px';
+        sharedMenu.dataset.openFor = btn.dataset.id;
+        sharedMenu.classList.add('show');
+    }
+
+    function closeAllActionMenus() {
+        sharedMenu.classList.remove('show');
+        sharedMenu.style.display = '';
+        sharedMenu.dataset.openFor = '';
+    }
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.action-btn') && !e.target.closest('#sharedActionMenu')) {
+            closeAllActionMenus();
+        }
+    });
+    window.addEventListener('scroll', closeAllActionMenus, true);
+    window.addEventListener('resize', closeAllActionMenus);
+
+    /* ===== Checkbox "select all" ===== */
+    document.getElementById('checkAll').addEventListener('change', function () {
+        document.querySelectorAll('.row-check').forEach(cb => { cb.checked = this.checked; });
+    });
+
+    /* ===== Search + entries-per-page + pagination (client-side) ===== */
+    const allRows = Array.from(document.querySelectorAll('#produkTable tbody .produk-row'));
+    const searchInput = document.getElementById('searchInput');
+    const entriesSelect = document.getElementById('entriesSelect');
+    const paginationList = document.getElementById('paginationList');
+    const footerInfo = document.getElementById('footerInfo');
+
+    let currentPage = 1;
+
+    function getFilteredRows() {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) return allRows;
+        return allRows.filter(row => row.dataset.search.includes(q));
+    }
+
+    function renderTable() {
+        const filtered = getFilteredRows();
+        const perPage = parseInt(entriesSelect.value, 10);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        allRows.forEach(row => row.style.display = 'none');
+
+        const start = (currentPage - 1) * perPage;
+        const end = start + perPage;
+        filtered.slice(start, end).forEach(row => row.style.display = '');
+
+        if (filtered.length === 0) {
+            footerInfo.textContent = 'Tidak ada produk yang cocok.';
+        } else {
+            footerInfo.textContent = 'Menampilkan ' + (start + 1) + ' - ' + Math.min(end, filtered.length) +
+                ' dari ' + filtered.length + ' produk';
+        }
+
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        paginationList.innerHTML = '';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = 'Prev';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => { currentPage--; renderTable(); };
+        paginationList.appendChild(prevBtn);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            if (i === currentPage) btn.classList.add('active');
+            btn.onclick = () => { currentPage = i; renderTable(); };
+            paginationList.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => { currentPage++; renderTable(); };
+        paginationList.appendChild(nextBtn);
+    }
+
+    searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
+    entriesSelect.addEventListener('change', () => { currentPage = 1; renderTable(); });
+
+    renderTable();
 </script>
 
 {% endblock %}
