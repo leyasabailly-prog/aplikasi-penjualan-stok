@@ -11,6 +11,9 @@
         border-radius: 8px; font-size: .85rem; background: #fff; color: var(--ink);
     }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 560px) {
+        .form-row { grid-template-columns: 1fr; }
+    }
     .form-errors { color: var(--danger); font-size: .75rem; margin-top: .25rem; }
     .form-actions { display: flex; gap: .6rem; margin-top: 1.3rem; }
     .btn-primary {
