@@ -1,33 +1,251 @@
 {% extends 'base.html' %}
 {% block title %}Struk Transaksi{% endblock %}
 {% block content %}
-<h1>Struk Transaksi</h1>
-<p><strong>No. Transaksi:</strong> {{ penjualan.no_transaksi }}</p>
-<p><strong>Tanggal:</strong> {{ penjualan.tanggal }}</p>
-<p><strong>Kasir:</strong> {{ penjualan.kasir }}</p>
+<style>
+    .struk-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.25rem;
+    }
+    .struk-actions {
+        display: flex; gap: .6rem;
+    }
+    .btn-outline {
+        background: transparent; color: var(--ink-soft);
+        border: 1px solid var(--line); padding: .55rem 1.1rem;
+        border-radius: 8px; font-weight: 600; font-size: .85rem;
+        cursor: pointer; text-decoration: none; display: inline-flex;
+        align-items: center; gap: .4rem;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Produk</th>
-            <th>Qty</th>
-            <th>Harga Satuan</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for detail in penjualan.detail.all %}
-        <tr>
-            <td>{{ detail.produk.nama_produk }}</td>
-            <td>{{ detail.qty }}</td>
-            <td>Rp{{ detail.harga_satuan }}</td>
-            <td>Rp{{ detail.subtotal }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    .struk-meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem 1.5rem;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px dashed var(--line);
+    }
+    .struk-meta .item .label {
+        font-size: .7rem; letter-spacing: .04em; text-transform: uppercase;
+        color: var(--ink-faint); font-weight: 600; margin-bottom: .25rem;
+    }
+    .struk-meta .item .value {
+        font-size: .92rem; font-weight: 600; color: var(--ink);
+    }
 
-<h3>Total: Rp{{ penjualan.total_harga }}</h3>
+    .struk-total-row {
+        display: flex; justify-content: flex-end; align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+    }
+    .struk-total-row .label { font-size: .9rem; color: var(--ink-soft); font-weight: 600; }
+    .struk-total-row .value {
+        font-size: 1.25rem; font-weight: 700; color: var(--accent);
+        font-family: 'IBM Plex Mono', monospace;
+    }
 
-<a href="{% url 'buat_transaksi' %}">Buat Transaksi Baru</a>
+    .struk-footer {
+        margin-top: 1.5rem;
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: .75rem;
+    }
+
+    table td.num, table th.num { text-align: right; }
+
+    /* ===== Struk cetak (thermal-style) — cuma kelihatan saat print ===== */
+    .struk-print { display: none; }
+
+    @media print {
+        @page {
+            size: 80mm auto;
+            margin: 3mm 4mm;
+        }
+
+        .sidebar, .struk-header, .struk-footer { display: none !important; }
+        .main-area { padding: 0 !important; }
+        .card-surface { display: none !important; }
+
+        body { background: #fff !important; }
+        .struk-print, .struk-print * {
+            color: #000 !important;
+            text-decoration: none !important;
+        }
+        .struk-print {
+            display: block;
+            width: 302px;
+            max-width: 100%;
+            margin: 0 auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11.5px;
+            line-height: 1.55;
+        }
+        .struk-print .toko-nama {
+            text-align: center; font-size: 16px; font-weight: 700;
+            letter-spacing: .02em;
+        }
+        .struk-print .toko-sub {
+            text-align: center; font-size: 10px; margin-bottom: 4px;
+        }
+        .struk-print .garis {
+            border-top: 1px dashed #000; margin: 6px 0;
+        }
+        .struk-print .baris-info {
+            display: flex; justify-content: space-between; gap: .5rem;
+        }
+        .struk-print .item-blok { margin-bottom: 4px; }
+        .struk-print .item-nama { font-weight: 700; }
+        .struk-print .item-detail {
+            display: flex; justify-content: space-between;
+        }
+        .struk-print .baris-total {
+            display: flex; justify-content: space-between;
+            font-weight: 700; font-size: 12.5px;
+        }
+        .struk-print .baris-bayar {
+            display: flex; justify-content: space-between;
+        }
+        .struk-print .status-lunas {
+            text-align: center; font-weight: 700; letter-spacing: .04em;
+            margin-top: 4px;
+        }
+        .struk-print .catatan {
+            text-align: center; font-size: 10px; margin: 4px 0;
+        }
+        .struk-print .kasir-row { text-align: center; margin-top: 4px; }
+        .struk-print .footer-cetak {
+            text-align: center; margin-top: 4px; font-size: 10px;
+        }
+    }
+</style>
+
+<div class="struk-header">
+    <h1 style="margin-bottom:0;">Struk Transaksi</h1>
+    <div class="struk-actions">
+        <button type="button" class="btn-outline" onclick="window.print()">
+            <i class="ti ti-printer"></i>Cetak
+        </button>
+    </div>
+</div>
+
+<div class="card-surface">
+    <div class="struk-meta">
+        <div class="item">
+            <div class="label">No. Transaksi</div>
+            <div class="value">{{ penjualan.no_transaksi }}</div>
+        </div>
+        <div class="item">
+            <div class="label">Tanggal</div>
+            <div class="value">{{ penjualan.tanggal|date:"d M Y, H:i" }}</div>
+        </div>
+        <div class="item">
+            <div class="label">Kasir</div>
+            <div class="value">{{ penjualan.kasir.username|default:"-" }}</div>
+        </div>
+        <div class="item">
+            <div class="label">Metode Bayar</div>
+            <div class="value">{{ penjualan.get_metode_bayar_display }}</div>
+        </div>
+        <div class="item">
+            <div class="label">Status</div>
+            <div class="value">
+                {% if penjualan.status == 'selesai' %}
+                    <span class="stamp ok"><i class="ti ti-circle-check"></i>{{ penjualan.get_status_display }}</span>
+                {% else %}
+                    <span class="stamp danger"><i class="ti ti-circle-x"></i>{{ penjualan.get_status_display }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <table border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Produk</th>
+                <th class="num">Qty</th>
+                <th class="num">Harga Satuan</th>
+                <th class="num">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in penjualan.detail.all %}
+            <tr>
+                <td>{{ detail.produk.nama_produk }}</td>
+                <td class="num">{{ detail.qty }}</td>
+                <td class="num" data-value="{{ detail.harga_satuan }}">Rp{{ detail.harga_satuan }}</td>
+                <td class="num" data-value="{{ detail.subtotal }}">Rp{{ detail.subtotal }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center; color:var(--ink-faint); padding:1.5rem !important;">
+                    Tidak ada item pada transaksi ini.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="struk-total-row">
+        <span class="label">Total</span>
+        <span class="value" data-value="{{ penjualan.total_harga }}">Rp{{ penjualan.total_harga }}</span>
+    </div>
+</div>
+
+{# ===== Versi cetak (thermal-style), disembunyikan di layar, muncul cuma saat print ===== #}
+<div class="struk-print">
+    <div class="toko-nama">Toko Kita</div>
+    <div class="toko-sub">Retail Ops</div>
+    <div class="garis"></div>
+
+    <div class="baris-info">
+        <span>{{ penjualan.tanggal|date:"d.m.Y H:i" }}</span>
+        <span>#{{ penjualan.no_transaksi }}</span>
+    </div>
+    <div class="garis"></div>
+
+    {% for detail in penjualan.detail.all %}
+    <div class="item-blok">
+        <div class="item-nama">{{ detail.produk.nama_produk }}</div>
+        <div class="item-detail">
+            <span>{{ detail.qty }}x <span data-value="{{ detail.harga_satuan }}">Rp{{ detail.harga_satuan }}</span></span>
+            <span data-value="{{ detail.subtotal }}">Rp{{ detail.subtotal }}</span>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="garis"></div>
+
+    <div class="baris-total">
+        <span>Total</span>
+        <span data-value="{{ penjualan.total_harga }}">Rp{{ penjualan.total_harga }}</span>
+    </div>
+    <div class="baris-bayar">
+        <span>{{ penjualan.get_metode_bayar_display }}</span>
+        <span data-value="{{ penjualan.total_harga }}">Rp{{ penjualan.total_harga }}</span>
+    </div>
+    <div class="status-lunas">
+        {% if penjualan.status == 'selesai' %}LUNAS{% else %}DIBATALKAN{% endif %}
+    </div>
+    <div class="garis"></div>
+
+    <div class="catatan">Barang yang sudah dibeli tidak dapat dikembalikan/ditukar</div>
+
+    <div class="kasir-row">Kasir: {{ penjualan.kasir.username|default:"-" }}</div>
+    <div class="footer-cetak">Terima kasih telah berbelanja</div>
+</div>
+
+<div class="struk-footer">
+    <a href="{% url 'buat_transaksi' %}" class="btn-primary" style="text-decoration:none;">
+        + Buat Transaksi Baru
+    </a>
+    <a href="{% url 'riwayat_transaksi' %}">&larr; Kembali ke Riwayat Transaksi</a>
+</div>
+
+<script>
+    document.querySelectorAll('[data-value]').forEach(function (el) {
+        const value = parseFloat(el.getAttribute('data-value')) || 0;
+        el.textContent = 'Rp' + value.toLocaleString('id-ID', { maximumFractionDigits: 0 });
+    });
+</script>
 {% endblock %}
